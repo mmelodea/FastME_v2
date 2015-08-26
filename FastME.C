@@ -142,7 +142,7 @@ int FastME(){
     for(int s=0; s<nsig; s++){
       MC_Sig_Tree->GetEntry(s);
       
-      ///Checks Data-Sig Final State Compability
+      ///Checks Data-Sig Final State Compatibility
       if(DataFS != MC_SIG_FS) continue;
       
       dr_test = FS4l_DrComputers(Data,MC_SIG,Model);
@@ -156,7 +156,7 @@ int FastME(){
     for(int b=0; b<nbkg; b++){
       MC_Bkg_Tree->GetEntry(b);
 
-      ///Checks Data-Sig Final State Compability
+      ///Checks Data-Sig Final State Compatibility
       if(DataFS != MC_BKG_FS) continue;
       
       dr_test = FS4l_DrComputers(Data,MC_BKG,Model);
