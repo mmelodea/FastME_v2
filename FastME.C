@@ -27,9 +27,9 @@ int FastME(){
  
   
   ///Preparing Inputs
-  TString Out_Name    = "BkgVBF_FME_DrMedio";
+  TString Out_Name    = "SigVBF_FME_DrMedio";
   TString Model       = "DrMedio";
-  TString Data_Path   = "/home/sabayon/GitHub/FastME_v2/Ntuples/VBF_QED4_QCD0_BKG2.root";
+  TString Data_Path   = "/home/sabayon/GitHub/FastME_v2/Ntuples/VBF_QED4_QCD0_SIG2.root";
   TString MC_Sig_Path = "/home/sabayon/GitHub/FastME_v2/Ntuples/VBF_QED4_QCD0_SIG1.root";
   TString MC_Bkg_Path = "/home/sabayon/GitHub/FastME_v2/Ntuples/VBF_QED4_QCD0_BKG1.root";
   TString Tree_Name   = "Higgs";
@@ -56,16 +56,10 @@ int FastME(){
   MC_Bkg_Tree->SetBranchAddress(Objs_Branch,&MC_BKG);
   MC_Bkg_Tree->SetBranchAddress(FS_Branch,&MC_BKG_FS);
   int nbkg = MC_Bkg_Tree->GetEntries();
-    
-
-  ///For timming the process
-  time_t start, stop;
-  double seconds, elapsed_time;
-  string unity = "s";
-  time(&start);
-  ///--------------------------
-  
-  cout<<"\n:::::: Starting FastME Processing ::::::"<<endl;
+      
+  cout<<"\n::::::::::::::::::::::::::::::::::::::::"<<endl;
+  cout<<":::::: Starting FastME Processing ::::::"<<endl;
+  cout<<"::::::::::::::::::::::::::::::::::::::::"<<endl;
   cout<<":: Final State:    "<<"4l"<<endl;
   cout<<":: Model Chosen:   "<<Model<<endl;
   cout<<"::--------------------------------------"<<endl;
@@ -97,8 +91,8 @@ int FastME(){
   }
 
   
-  cout<<":: Final State Yields in the Ntuples  ::"<<endl;
-  cout<<":: Ntuple   "<<"4e     "<<"4mu     "<<"2e2mu      ::"<<endl;
+  cout<<":: Final State Yields in the Ntuples"<<endl;
+  cout<<":: Ntuple   "<<"4e     "<<"4mu     "<<"2e2mu"<<endl;
   cout<<":: Data     "<<d4e<<"   "<<d4u<<"    "<<d2e2u<<endl;
   cout<<":: Sig      "<<s4e<<"   "<<s4u<<"    "<<s2e2u<<endl;
   cout<<":: Bkg      "<<b4e<<"   "<<b4u<<"    "<<b2e2u<<endl;
@@ -119,6 +113,13 @@ int FastME(){
   FME_out->Branch("WBkg_ToEvent",&bkg_event_weight);
   FME_out->Branch("Event_Weight",&event_weight);
 
+  ///For timming the process
+  time_t start, stop;
+  double seconds, elapsed_time;
+  string unity = "s";
+  time(&start);
+  ///--------------------------
+  
   for(int i=0; i<ndata; i++){
     if(i % (ndata/10) == 0 && i != 0) cout<<":: Remaining Data: "<<ndata-i<<endl;
     Data_Tree->GetEntry(i);
