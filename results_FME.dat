@@ -1,25 +1,12 @@
 ggH2e2mu vs. qqZZ2e2mu
 
 ::------- Using PSB_Distance -----------
-:: SigFrac =      88%
-:: BkgFrac =      12%
+:: SigFrac =      90.57%
+:: BkgFrac =      9.43%
 ::-------- Using PSB_Weight -----------
-:: SigFrac =      80.87%
-:: BkgFrac =      19.13%
-:: Time Consumed: 2.76667min.
+:: SigFrac =      89.75%
+:: BkgFrac =      10.25%
+:: Time Consumed: 3.06667min.
 ::--------------------------------------
-
-::------- Using PSB_Distance -----------
-:: SigFrac =      14.85%
-:: BkgFrac =      85.15%
-::-------- Using PSB_Weight -----------
-:: SigFrac =      93.43%
-:: BkgFrac =      6.57%
-:: Time Consumed: 2.95min.
-::--------------------------------------
-
-
-
-ggH2e2mu vs. ggZZ2e2mu
 
 

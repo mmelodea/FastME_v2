@@ -4,7 +4,7 @@
 ///:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 ///:::::::::::::::::::::::::::: 4 LEPTONS FINAL STATE CASE :::::::::::::::::::::::::::::::
 
-#define pi 3.14159265
+#define pi 3.14159265358979312
 #include "FS4l_DrComputers.h"
 #include <TString.h>
 #include <iostream>
@@ -50,19 +50,21 @@ double FS4l_DrOrder(Double_t Data[4][3][2], Double_t MC[4][3][2]){
       sum_dr1 = 0;
       sum_dr2 = 0;
 	
-      fdpt2 = pow( (Data[start][0][0]-MC[start][0][0])/Data[start][0][1] ,2 );
+      fdpt2  = pow( (Data[start][0][0]-MC[start][0][0])/Data[start][0][1] ,2 );
       fdeta2 = pow( (Data[start][1][0]-MC[start][1][0])/Data[start][1][1] ,2 );
-      if(Data[start][2][0]*MC[start][2][0] > 0)
-	fdphi2 = pow( (Data[start][2][0]-MC[start][2][0])/Data[start][2][1] ,2 );
-      if(Data[start][2][0]*MC[start][2][0] < 0)
-	fdphi2 = pow( (2*pi-Data[start][2][0]-MC[start][2][0])/Data[start][2][1] ,2 );
       
-      sdpt2 = pow( (Data[start][0][0]-MC[start+1][0][0])/Data[start][0][1] ,2 );
+      if(Data[start][2][0]-MC[start][2][0] > pi)
+	fdphi2 = pow( (Data[start][2][0]-MC[start][2][0]-pi)/Data[start][2][1] ,2 );
+      else
+	fdphi2 = pow( (Data[start][2][0]-MC[start][2][0])/Data[start][2][1] ,2 );
+      
+      sdpt2  = pow( (Data[start][0][0]-MC[start+1][0][0])/Data[start][0][1] ,2 );
       sdeta2 = pow( (Data[start][1][0]-MC[start+1][1][0])/Data[start][1][1] ,2 );
-      if(Data[start][2][0]*MC[start][2][0] > 0)
+      
+      if(Data[start][2][0]-MC[start+1][2][0] > pi)
+	sdphi2 = pow( (Data[start][2][0]-MC[start+1][2][0]-pi)/Data[start][2][1] ,2 );
+      else
 	sdphi2 = pow( (Data[start][2][0]-MC[start+1][2][0])/Data[start][2][1] ,2 );
-      if(Data[start][2][0]*MC[start][2][0] < 0)
-	sdphi2 = pow( (2*pi-Data[start][2][0]-MC[start+1][2][0])/Data[start][2][1] ,2 );
       
       sum_dr1 = sqrt(fdpt2 + fdeta2 + fdphi2);
       sum_dr2 = sqrt(sdpt2 + sdeta2 + sdphi2);
@@ -112,10 +114,10 @@ double FS4l_DrMedio(Double_t Data[4][3][2], Double_t MC[4][3][2]){
       sum_dPt2  += pow( (Data[idt][0][0]-MC[imc][0][0])/Data[idt][0][1] ,2 );
       sum_dEta2 += pow( (Data[idt][1][0]-MC[imc][1][0])/Data[idt][1][1] ,2 );
       
-      if(Data[idt][2][0]*MC[imc][2][0] > 0)
+      if( fabs(Data[idt][2][0]-MC[imc][2][0]) > pi)
+	sum_dPhi2 += pow( (Data[idt][2][0]-MC[imc][2][0]-pi)/Data[idt][2][1] ,2 );
+      else
 	sum_dPhi2 += pow( (Data[idt][2][0]-MC[imc][2][0])/Data[idt][2][1] ,2 );
-      else if(Data[idt][2][0]*MC[imc][2][0] < 0)
-	sum_dPhi2 += pow( (2*pi-Data[idt][2][0]-MC[imc][2][0])/Data[idt][2][1] ,2 );
     }
     
     ///Computing the media of pair combinations

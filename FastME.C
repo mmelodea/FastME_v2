@@ -26,11 +26,11 @@ int FastME(){
  
   
   ///Preparing Inputs
-  TString Out_Name    = "ggZZ2e2mu_FME_DrMedio";
+  TString Out_Name    = "qqZZ2e2mu_vs_ggH2e2mu_FME_DrMedio";
   TString Model       = "DrMedio";
-  TString Data_Path   = "/home/sabayon/GitHub/FastME_v2/NtuplesSherpa/ggZZ2e2mu_unweighted.root";
+  TString Data_Path   = "/home/sabayon/GitHub/FastME_v2/NtuplesSherpa/qqZZ2e2mu_unweighted.root";
   TString MC_Sig_Path = "/home/sabayon/GitHub/FastME_v2/NtuplesSherpa/ggH2e2mu_weighted.root";
-  TString MC_Bkg_Path = "/home/sabayon/GitHub/FastME_v2/NtuplesSherpa/ggZZ2e2mu_weighted.root";
+  TString MC_Bkg_Path = "/home/sabayon/GitHub/FastME_v2/NtuplesSherpa/qqZZ2e2mu_weighted.root";
   TString Tree_Name   = "LHE_Tree";
   TString Objs_Branch = "RECO_PARTICLE";
   TString FS_Branch   = "FS_TYPE";
