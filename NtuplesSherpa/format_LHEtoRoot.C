@@ -14,8 +14,21 @@ using namespace std;
 
 void format_LHEtoRoot(ifstream &Input, TString out_name){
   
-  //ifstream Input("ggH2e2mu_weighted.lhe");
+
+  ///Checks if file given is ok
+  int ncheck = 0;
   string info;
+  do{
+     Input >> info;
+     ncheck += 1;
+     //cout<<"ncheck: "<<ncheck<<endl;
+  }while(info == "" && ncheck < 100);
+  if(info == ""){
+    cout<<"Where's the file?!"<<endl;
+    throw exception();
+  }
+  ///--------------------------------
+  
   TLorentzVector p1, p2, p3, p4;
   
   TH1D *Zon = new TH1D("Zon","Z On-Shell",40,40,120);
@@ -63,7 +76,7 @@ void format_LHEtoRoot(ifstream &Input, TString out_name){
 	    Input >> info;
 	    if(info == "1"){
 	     Input >> event_weight;
-	     cout<<"Event Weight: "<<event_weight<<endl;
+	     //cout<<"Event Weight: "<<event_weight<<endl;
 	    }
 	  }
     

@@ -18,7 +18,6 @@
 
 #define pedestal 	-99					///Reset Value to Variables
 #define cut 	 	0.5					///Threshold to Separate Events (Ideal Cut 0.5 - MC #Sig and #Bkg Equals)
-#define PHS_radius	300					///Neighborhood threshold to weight events
 
 using namespace std;
 
@@ -27,14 +26,15 @@ int FastME(){
  
   
   ///Preparing Inputs
-  TString Out_Name    = "SigVBF_FME_DrMedio";
+  TString Out_Name    = "ggZZ2e2mu_FME_DrMedio";
   TString Model       = "DrMedio";
-  TString Data_Path   = "/home/sabayon/GitHub/FastME_v2/Ntuples/VBF_QED4_QCD0_SIG2.root";
-  TString MC_Sig_Path = "/home/sabayon/GitHub/FastME_v2/Ntuples/VBF_QED4_QCD0_SIG1.root";
-  TString MC_Bkg_Path = "/home/sabayon/GitHub/FastME_v2/Ntuples/VBF_QED4_QCD0_BKG1.root";
-  TString Tree_Name   = "Higgs";
+  TString Data_Path   = "/home/sabayon/GitHub/FastME_v2/NtuplesSherpa/ggZZ2e2mu_unweighted.root";
+  TString MC_Sig_Path = "/home/sabayon/GitHub/FastME_v2/NtuplesSherpa/ggH2e2mu_weighted.root";
+  TString MC_Bkg_Path = "/home/sabayon/GitHub/FastME_v2/NtuplesSherpa/ggZZ2e2mu_weighted.root";
+  TString Tree_Name   = "LHE_Tree";
   TString Objs_Branch = "RECO_PARTICLE";
   TString FS_Branch   = "FS_TYPE";
+  TString EW_Branch   = "EVENT_WEIGHT";
   ///------------------------------------------------------------------------------------
   
   
@@ -46,15 +46,18 @@ int FastME(){
   TTree *MC_Bkg_Tree = (TTree*)fMC_Bkg->Get(Tree_Name);
         
   Int_t DataFS, MC_SIG_FS, MC_BKG_FS;
-  Float_t Data[4][3][2], MC_SIG[4][3][2], MC_BKG[4][3][2];
+  Double_t MC_SIG_WEIGHT, MC_BKG_WEIGHT;
+  Double_t Data[4][3][2], MC_SIG[4][3][2], MC_BKG[4][3][2];
   Data_Tree->SetBranchAddress(Objs_Branch,&Data);
   Data_Tree->SetBranchAddress(FS_Branch,&DataFS);
   int ndata = Data_Tree->GetEntries();
   MC_Sig_Tree->SetBranchAddress(Objs_Branch,&MC_SIG);
   MC_Sig_Tree->SetBranchAddress(FS_Branch,&MC_SIG_FS);
+  MC_Sig_Tree->SetBranchAddress(EW_Branch,&MC_SIG_WEIGHT);
   int nsig = MC_Sig_Tree->GetEntries();
   MC_Bkg_Tree->SetBranchAddress(Objs_Branch,&MC_BKG);
   MC_Bkg_Tree->SetBranchAddress(FS_Branch,&MC_BKG_FS);
+  MC_Bkg_Tree->SetBranchAddress(EW_Branch,&MC_BKG_WEIGHT);
   int nbkg = MC_Bkg_Tree->GetEntries();
       
   cout<<"\n::::::::::::::::::::::::::::::::::::::::"<<endl;
@@ -68,6 +71,7 @@ int FastME(){
   cout<<":: #MC BKG Events: "<<nbkg<<endl;
   cout<<"::--------------------------------------"<<endl;
   
+  ///Compute the final state yields in the ntuples
   int d4e=0, d4u=0, d2e2u=0;
   for(int fs=0; fs<ndata; fs++){
     Data_Tree->GetEntry(fs);
@@ -89,8 +93,6 @@ int FastME(){
     if(MC_BKG_FS==1) b4u    += 1;
     if(MC_BKG_FS==2) b2e2u  += 1;
   }
-
-  
   cout<<":: Final State Yields in the Ntuples"<<endl;
   cout<<":: Ntuple   "<<"4e     "<<"4mu     "<<"2e2mu"<<endl;
   cout<<":: Data     "<<d4e<<"   "<<d4u<<"    "<<d2e2u<<endl;
@@ -99,19 +101,17 @@ int FastME(){
   cout<<"::______________________________________"<<endl;
   cout<<"::--------------------------------------"<<endl;
   
-  double dr_test, minDR_toSig, minDR_toBkg, prob_sig_bkg, sig_event_weight, bkg_event_weight, event_weight;
-  double sig_frac, bkg_frac, min_dr_sig, min_dr_bkg;
-  int sig_neighbors, bkg_neighbors, signal = 0, background = 0;
+  Double_t dr_test, minDR_toSig, minDR_toBkg, psb_distance, sig_event_weight, bkg_event_weight, psb_weight;
+  Double_t sig_frac1, bkg_frac1, sig_frac2, bkg_frac2, min_dr_sig, min_dr_bkg;
+  int signal1 = 0, background1 = 0, signal2 = 0, background2 = 0;
   TTree *FME_out = new TTree("FastME_Results","Fast Matrix Element Results");
   FME_out->SetDirectory(0);
   FME_out->Branch("minDR_toSig",&minDR_toSig);
   FME_out->Branch("minDR_toBkg",&minDR_toBkg);
-  FME_out->Branch("SigFrac",&sig_frac);
-  FME_out->Branch("BkgFrac",&bkg_frac);
-  FME_out->Branch("P_SB",&prob_sig_bkg);
+  FME_out->Branch("PSB_Distance",&psb_distance);
   FME_out->Branch("WSig_ToEvent",&sig_event_weight);
   FME_out->Branch("WBkg_ToEvent",&bkg_event_weight);
-  FME_out->Branch("Event_Weight",&event_weight);
+  FME_out->Branch("PSB_Weight",&psb_weight);
 
   ///For timming the process
   time_t start, stop;
@@ -127,15 +127,12 @@ int FastME(){
     ///Reseting Variables
     minDR_toSig   	= pedestal;
     minDR_toBkg   	= pedestal;
-    prob_sig_bkg  	= pedestal;
-    sig_frac      	= pedestal;
-    bkg_frac	  	= pedestal;
+    psb_distance  	= pedestal;
     sig_event_weight 	= pedestal;
     bkg_event_weight 	= pedestal;
+    psb_weight		= pedestal;
     min_dr_sig    	= 1.E15;
     min_dr_bkg    	= 1.E15;
-    sig_neighbors 	= 0;
-    bkg_neighbors 	= 0;
         
     
     ///:::::::::::::  Using MC Sig  :::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -146,8 +143,10 @@ int FastME(){
       if(DataFS != MC_SIG_FS) continue;
       
       dr_test = FS4l_DrComputers(Data,MC_SIG,Model);
-      if(dr_test < min_dr_sig) min_dr_sig = dr_test;
-      if(dr_test < PHS_radius) sig_neighbors += 1;
+      if(dr_test < min_dr_sig){
+	min_dr_sig = dr_test;
+	sig_event_weight = MC_SIG_WEIGHT;
+      }
     }
     ///::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     
@@ -160,34 +159,44 @@ int FastME(){
       if(DataFS != MC_BKG_FS) continue;
       
       dr_test = FS4l_DrComputers(Data,MC_BKG,Model);
-      if(dr_test < min_dr_bkg) min_dr_bkg = dr_test;
-      if(dr_test < PHS_radius) bkg_neighbors += 1;
+      if(dr_test < min_dr_bkg){
+	min_dr_bkg = dr_test;
+	bkg_event_weight = MC_BKG_WEIGHT;
+      }
     }    
     ///::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     
     
-    ///Getting the discriminant value
+    ///Getting the discriminant value based on phase space distance
     if(min_dr_sig == 0 && min_dr_bkg == 0){ 
       min_dr_sig = 1;
       min_dr_bkg = 1;
     }
-      prob_sig_bkg = min_dr_sig/(min_dr_sig + min_dr_bkg);
-      minDR_toSig = min_dr_sig;
-      minDR_toBkg = min_dr_bkg;
-      
-    ///Checking amount of kind choices
-    if(prob_sig_bkg < cut) signal += 1;
-    if(prob_sig_bkg > cut) background += 1;
-    if(i == ndata-1){
-      sig_frac = (signal/float(ndata))*100;
-      bkg_frac = (background/float(ndata))*100;
+    psb_distance = min_dr_sig/(min_dr_sig + min_dr_bkg);
+    minDR_toSig  = min_dr_sig;
+    minDR_toBkg  = min_dr_bkg;
+    
+    
+    ///Getting data event weight
+    if(sig_event_weight == 0 && bkg_event_weight == 0){
+      sig_event_weight = 1.;
+      bkg_event_weight = 1.;
     }
+    psb_weight = sig_event_weight/(sig_event_weight + bkg_event_weight);
     
-    ///Getting Event Weights
-    sig_event_weight = sig_neighbors/float(nsig);
-    bkg_event_weight = bkg_neighbors/float(nbkg);
-    event_weight     = sig_event_weight/(sig_event_weight + bkg_event_weight);
-    
+    ///Checking amount of kind choices
+    if(psb_distance < cut) signal1 += 1;
+    if(psb_distance > cut) background1 += 1;
+    if(i == ndata-1){
+      sig_frac1 = (signal1/float(ndata))*100;
+      bkg_frac1 = (background1/float(ndata))*100;
+    }    
+    if(psb_weight < cut) signal2 += 1;
+    if(psb_weight > cut) background2 += 1;
+    if(i == ndata-1){
+      sig_frac2 = (signal2/float(ndata))*100;
+      bkg_frac2 = (background2/float(ndata))*100;
+    }    
       
     ///Saving Current Results
     FME_out->Fill();
@@ -199,9 +208,13 @@ int FastME(){
   FME_Results->Close();
   
   time(&stop);
-  cout<<"::::::::::: Process Finished :::::::::::"<<endl;
-  cout<<":: SigFrac =      "<<sig_frac<<"%"<<endl;
-  cout<<":: BkgFrac =      "<<bkg_frac<<"%"<<endl;
+  cout<<":::::::::: Process Finished ::::::::::::"<<endl;
+  cout<<"::------- Using PSB_Distance -----------"<<endl;
+  cout<<":: SigFrac =      "<<sig_frac1<<"%"<<endl;
+  cout<<":: BkgFrac =      "<<bkg_frac1<<"%"<<endl;
+  cout<<"::-------- Using PSB_Weight -----------"<<endl;
+  cout<<":: SigFrac =      "<<sig_frac2<<"%"<<endl;
+  cout<<":: BkgFrac =      "<<bkg_frac2<<"%"<<endl;
 
       
   seconds = difftime(stop,start);

@@ -12,7 +12,7 @@
 
 ///DISTANCE ORDERING MEDIUM + RESSONANCE CRITERY
 ///TAKES THE MEDIUM IN dPt, dEta, dPhi FOR EACH PAIR
-double FS4l_DrComputers(Float_t Data[4][3][2], Float_t MC[4][3][2], TString Model){
+double FS4l_DrComputers(Double_t Data[4][3][2], Double_t MC[4][3][2], TString Model){
   int SetModel = -1;
        if(Model == "DrOrder") SetModel = 0;
   else if(Model == "DrMedio") SetModel = 1;
@@ -35,7 +35,7 @@ double FS4l_DrComputers(Float_t Data[4][3][2], Float_t MC[4][3][2], TString Mode
 
 
 ///DR ORDERING
-double FS4l_DrOrder(Float_t Data[4][3][2], Float_t MC[4][3][2]){
+double FS4l_DrOrder(Double_t Data[4][3][2], Double_t MC[4][3][2]){
   double fdpt2, fdeta2, fdphi2, sdpt2, sdeta2, sdphi2, sum_dr1, sum_dr2;
   double sum_dpt2 = 0, sum_deta2 = 0, sum_dphi2 = 0, event_distance = -1;
   int start = 0;
@@ -96,7 +96,7 @@ double FS4l_DrOrder(Float_t Data[4][3][2], Float_t MC[4][3][2]){
 
 
 ///MEDIA
-double FS4l_DrMedio(Float_t Data[4][3][2], Float_t MC[4][3][2]){
+double FS4l_DrMedio(Double_t Data[4][3][2], Double_t MC[4][3][2]){
   int idt, imc;
   double sum_dPt2, sum_dEta2, sum_dPhi2, event_distance;
   double sum_dPt2_med = 0, sum_dEta2_med = 0, sum_dPhi2_med = 0;
