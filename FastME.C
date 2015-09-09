@@ -20,29 +20,114 @@
 #define pedestal 	-99					///Reset Value to Variables
 #define cut 	 	0.5					///Threshold to Separate Events (Ideal Cut 0.5 - MC #Sig and #Bkg Equals)
 
-///Sig XS
-#define gg4e_XS		0.000251915
-#define gg4mu_XS	0.000251915
-#define gg2e2mu_XS	0.000435256
+///This events doesn't contain photons!
+///Sig XS (pb)
+#define gg4e_XS		0.000245537
+#define gg4mu_XS	0.000245537
+#define gg2e2mu_XS	0.000430708
 
-///Bkg XS
-#define qq4e_XS	
-#define qq4mu_XS	
-#define qq2e2mu_XS	0.0521077
+///Bkg XS (pb)
+#define qq4e_XS		0.00666065
+#define qq4mu_XS	0.00666065
+#define qq2e2mu_XS	0.0132134
+
 
 using namespace std;
 
+///========== Compute Distance Between Events - Minimum Distance Method ===============
+Double_t ComputeDR2(Int_t FS, Int_t DataParticleID[4], Double_t Data[4][3][2],
+		 Int_t McParicleID[4], Double_t MC[4][3][2]){
+  
+  Double_t particles_distance, min_particles_distance;
+  Double_t dPt=0, dEta=0, dPhi=0;
+  Double_t sum_dPt2=0, sum_dEta2=0, sum_dPhi2=0, event_distance=-1;
+  
+  //cout<<"\nFinal State: "<<FS<<endl;
+  if(FS == 2){
+    for(int idt=0; idt<4; idt++)
+    for(int imc=0; imc<4; imc++){
+      ///Avoid different Data-MC particles comparison
+      if(DataParticleID[idt] != McParicleID[imc]) continue;
+      //cout<<"DataPos: "<<idt<<"  ID: "<<DataParticleID[idt]<<"  MCPos: "<<imc<<"   ID: "<<McParicleID[imc]<<endl;
+  
+      dPt  = (Data[idt][0][0]-MC[imc][0][0])/Data[idt][0][1];
+      dEta = (Data[idt][1][0]-MC[imc][1][0])/Data[idt][1][1];
+      dPhi = (Data[idt][2][0]-MC[imc][2][0])/Data[idt][2][1];
+      if(fabs(dPhi) > pi)
+	dPhi = (Data[idt][2][0]-MC[imc][2][0]-pi)/Data[idt][2][1];
+      
+      sum_dPt2  += dPt*dPt;
+      sum_dEta2 += dEta*dEta;
+      sum_dPhi2 += dPhi*dPhi;
+    }
+  }
+    
+  ///Takes the combination that gives minimum distance in 4e and 4mu final states
+  else if(FS == 0 || FS == 1){
+    int min_imc, vmin_imc[4] = {-1, -1, -1, -1};
+    for(int idt=0; idt<4; idt++){
+      min_imc = -1, particles_distance = -1; min_particles_distance = 1.E15;
+      for(int imc=0; imc<4; imc++){
+	///Avoid different Data-MC particles comparison
+	if(DataParticleID[idt] != McParicleID[imc]) continue;
+	//cout<<"DataPos: "<<idt<<"  ID: "<<DataParticleID[idt]<<"  MCPos: "<<imc<<"   ID: "<<McParicleID[imc]<<endl;
 
-///========== Compute Distance Between Leptons =============================================
+	dPt  = (Data[idt][0][0]-MC[imc][0][0])/(Data[idt][0][1]);
+	dEta = (Data[idt][1][0]-MC[imc][1][0])/(Data[idt][1][1]);
+	dPhi = (Data[idt][2][0]-MC[imc][2][0])/(Data[idt][2][1]);
+	if(fabs(dPhi) > pi)
+	  dPhi = (Data[idt][2][0]-MC[imc][2][0]-pi)/(Data[idt][2][1]);
+      
+	particles_distance = sqrt(dPt*dPt + dEta*dEta + dPhi*dPhi);
+	if(particles_distance < min_particles_distance && imc != vmin_imc[0] && imc != vmin_imc[1] && imc != vmin_imc[2]){
+	  min_imc = imc;
+	  min_particles_distance = particles_distance;
+	}
+      }
+      
+      ///Monitor of chosen MC
+      vmin_imc[idt] = min_imc;
+      //cout<<"DataPos: "<<idt<<"  ID: "<<DataParticleID[idt]<<"  MCPos: "<<min_imc<<"   ID: "<<McParicleID[min_imc]<<endl;
+      
+      dPt  = (Data[idt][0][0]-MC[min_imc][0][0])/(Data[idt][0][1]);
+      dEta = (Data[idt][1][0]-MC[min_imc][1][0])/(Data[idt][1][1]);
+      dPhi = (Data[idt][2][0]-MC[min_imc][2][0])/(Data[idt][2][1]);
+      if(fabs(dPhi) > pi)
+	dPhi = (Data[idt][2][0]-MC[min_imc][2][0]-pi)/(Data[idt][2][1]);
+      
+      sum_dPt2  += dPt*dPt;
+      sum_dEta2 += dEta*dEta;
+      sum_dPhi2 += dPhi*dPhi;      
+    }
+  }
+  
+  else{
+    cout<<"[Error] Final State irregular passed to ComputeDR function!"<<endl;
+    throw exception();
+  }
+
+  event_distance = sqrt(sum_dPt2 + sum_dEta2 + sum_dPhi2);
+  
+  if(event_distance == -1) throw exception();
+  else return event_distance;
+}
+///================================================================================================
+
+
+
+///========== Compute Distance Between Data-MC Events - Current Method ============================
 Double_t ComputeDR(Int_t FS, Int_t DataParticleID[4], Double_t Data[4][3][2],
 		 Int_t McParicleID[4], Double_t MC[4][3][2]){
   
   Double_t dPt=0, dEta=0, dPhi=0;
   Double_t sum_dPt2=0, sum_dEta2=0, sum_dPhi2=0, event_distance=-1;
   
+  //cout<<"\nFS: "<<FS<<endl;
   for(int idt=0; idt<4; idt++)
   for(int imc=0; imc<4; imc++){
+    ///Avoid different Data-MC particles comparison
     if(DataParticleID[idt] != McParicleID[imc]) continue;
+    //cout<<"DataPos: "<<idt<<"  ID: "<<DataParticleID[idt]<<"  MCPos: "<<imc<<"   ID: "<<McParicleID[imc]<<endl;
   
     if(FS == 2){
       dPt  = (Data[idt][0][0]-MC[imc][0][0])/Data[idt][0][1];
@@ -51,12 +136,14 @@ Double_t ComputeDR(Int_t FS, Int_t DataParticleID[4], Double_t Data[4][3][2],
       if(fabs(dPhi) > pi)
 	dPhi = (Data[idt][2][0]-MC[imc][2][0]-pi)/Data[idt][2][1];
     }
+    
+    ///Takes the media of combinations in 4e and 4mu final states
     else if(FS == 0 || FS == 1){
       dPt  = (Data[idt][0][0]-MC[imc][0][0])/(2*Data[idt][0][1]);
       dEta = (Data[idt][1][0]-MC[imc][1][0])/(2*Data[idt][1][1]);
       dPhi = (Data[idt][2][0]-MC[imc][2][0])/(2*Data[idt][2][1]);
       if(fabs(dPhi) > pi)
-	dPhi = (Data[idt][2][0]-MC[imc][2][0]-pi)/2*Data[idt][2][1]);      
+	dPhi = (Data[idt][2][0]-MC[imc][2][0]-pi)/(2*Data[idt][2][1]);      
     }
     else{
       cout<<"[Error] Final State irregular passed to ComputeDR function!"<<endl;
@@ -67,8 +154,8 @@ Double_t ComputeDR(Int_t FS, Int_t DataParticleID[4], Double_t Data[4][3][2],
     sum_dEta2 += dEta*dEta;
     sum_dPhi2 += dPhi*dPhi;
   }      
-  event_distance = sqrt(sum_dPt2 + sum_dEta2 + sum_dPhi2);
   
+  event_distance = sqrt(sum_dPt2 + sum_dEta2 + sum_dPhi2);
   
   if(event_distance == -1) throw exception();
   else return event_distance;
@@ -76,33 +163,42 @@ Double_t ComputeDR(Int_t FS, Int_t DataParticleID[4], Double_t Data[4][3][2],
 ///================================================================================================
 
 
+
 ///========= Compute Discriminant Values ==========================================================
+///Based on Distance
 Double_t psbD(Double_t min_dr_sig, Double_t min_dr_bkg){
-  return min_dr_sig/(min_dr_sig + min_dr_bkg);
+  Double_t DD = min_dr_sig/(min_dr_sig + min_dr_bkg);
+  return DD;
 }
 
-Double_t psbW(Double_t sig_event_weight, Double_t bkg_event_weight, Int_t FS){
-  
+///Based on Weight
+Double_t psbW(Int_t FS, Double_t sig_event_weight, Double_t bkg_event_weight){
+  ///Splits the discriminant calculus according to final state (the cross section are different)
        if(FS == 0) return (sig_event_weight/gg4e_XS)/(sig_event_weight/gg4e_XS + bkg_event_weight/qq4e_XS);
   else if(FS == 1) return (sig_event_weight/gg4mu_XS)/(sig_event_weight/gg4mu_XS + bkg_event_weight/qq4mu_XS);
   else if(FS == 2) return (sig_event_weight/gg2e2mu_XS)/(sig_event_weight/gg2e2mu_XS + bkg_event_weight/qq2e2mu_XS);
-  else return 1;
+  else throw exception();
 }
 ///================================================================================================
 
 int FastME(){
  
   ///Preparing Inputs
-  TString Out_Name    = "sig_plus_bkg";
-  TString Data_Path   = "/home/sabayon/GitHub/FastME_v2/NtuplesMadGraph/Sig_plus_Bkg.root";
-  TString MC_Sig_Path = "/home/sabayon/GitHub/FastME_v2/NtuplesSherpa/gg2e2mu_weighted.root";
-  TString MC_Bkg_Path = "/home/sabayon/GitHub/FastME_v2/NtuplesSherpa/qq2e2mu_weighted.root";
+  TString Out_Name    = "qqZZ4l_MadGraph_FME_MinDist";
+  TString Data_Path   = "/home/sabayon/GitHub/FastME_v2/NtuplesMadGraph/qqZZ4l_MadGraph.root";
+  TString MC_Sig_Path = "/home/sabayon/GitHub/FastME_v2/NtuplesSherpa/ggZZ4l_weighted.root";
+  TString MC_Bkg_Path = "/home/sabayon/GitHub/FastME_v2/NtuplesSherpa/qqZZ4l_weighted.root";
   TString Tree_Name   = "LHE_Tree";
+  TString ID_Branch   = "ParticleID";
   TString Objs_Branch = "RecoParticle";
   TString FS_Branch   = "FinalState";
   TString EW_Branch   = "EventWeight";
   ///------------------------------------------------------------------------------------
   
+  ///Flags to control final state acceptance (only to use one channel)
+  bool fs4e = false;
+  bool fs4u = false;
+  bool fs2e2u = false;  
   
   TFile *fData = TFile::Open(Data_Path);
   TFile *fMC_Sig = TFile::Open(MC_Sig_Path);
@@ -111,7 +207,7 @@ int FastME(){
   TTree *MC_Sig_Tree = (TTree*)fMC_Sig->Get(Tree_Name);
   TTree *MC_Bkg_Tree = (TTree*)fMC_Bkg->Get(Tree_Name);
         
-  Int_t DataFS, DataID, MC_SIG_FS, MC_SIG_ID, MC_BKG_FS, MC_BKG_ID;
+  Int_t DataFS, DataID[4], MC_SIG_FS, MC_SIG_ID[4], MC_BKG_FS, MC_BKG_ID[4];
   Double_t MC_SIG_WEIGHT, MC_BKG_WEIGHT;
   Double_t Data[4][3][2], MC_SIG[4][3][2], MC_BKG[4][3][2];
   Data_Tree->SetBranchAddress(Objs_Branch,&Data);
@@ -166,8 +262,8 @@ int FastME(){
   cout<<"::______________________________________"<<endl;
   cout<<"::--------------------------------------"<<endl;
   
-  Double_t dr_test, minDR_toSig, minDR_toBkg, psb_distance, sig_event_weight, bkg_event_weight, psb_weight;
-  Double_t min_dr_sig, min_dr_bkg;
+  Double_t dr_test, minDR_toSig, minDR_toBkg, psb_distance, sig_event_weight;
+  Double_t min_dr_sig, min_dr_bkg, bkg_event_weight, psb_weight;
   TTree *FME_out = new TTree("FastME_Results","Fast Matrix Element Results");
   FME_out->SetDirectory(0);
   FME_out->Branch("minDR_toSig",&minDR_toSig);
@@ -184,9 +280,14 @@ int FastME(){
   time(&start);
   ///--------------------------
   
+  //ndata = 3;
   for(int i=0; i<ndata; i++){
     if(i % (ndata/10) == 0 && i != 0) cout<<":: Remaining Data: "<<ndata-i<<endl;
     Data_Tree->GetEntry(i);
+    //cout<<"\n\nDataFS: "<<DataFS<<endl;
+    if(fs4e == true && DataFS != 0) continue;
+    else if(fs4u == true && DataFS != 1) continue;
+    else if(fs2e2u == true && DataFS != 2) continue;
     
     ///Reseting Variables
     minDR_toSig   	= pedestal;
@@ -200,13 +301,18 @@ int FastME(){
         
     
     ///:::::::::::::  Using MC Sig  :::::::::::::::::::::::::::::::::::::::::::::::::::::
+    //nsig = mc_cut;
     for(int s=0; s<nsig; s++){
       MC_Sig_Tree->GetEntry(s);
+      if(fs4e == true && MC_SIG_FS != 0) continue;
+      if(fs4u == true && MC_SIG_FS != 1) continue;
+      if(fs2e2u == true && MC_SIG_FS != 2) continue;
       
       ///Checks Data-Sig Final State Compatibility
-      if(DataFS != MC_SIG_FS) continue;
+      //cout<<"SigFS: "<<MC_SIG_FS<<endl;
+      if(MC_SIG_FS != DataFS) continue;
       
-      dr_test = ComputeDR(Data,MC_SIG);
+      dr_test = ComputeDR2(DataFS,DataID,Data,MC_SIG_ID,MC_SIG);
       if(dr_test < min_dr_sig){
 	min_dr_sig = dr_test;
 	sig_event_weight = MC_SIG_WEIGHT;
@@ -216,13 +322,17 @@ int FastME(){
     
 
     ///::::::::::  Using MC Bkg  ::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    //nbkg = mc_cut;
     for(int b=0; b<nbkg; b++){
       MC_Bkg_Tree->GetEntry(b);
+      if(fs4e == true && MC_BKG_FS != 0) continue;
+      if(fs4u == true && MC_BKG_FS != 1) continue;
+      if(fs2e2u == true && MC_BKG_FS != 2) continue;
 
       ///Checks Data-Sig Final State Compatibility
-      if(DataFS != MC_BKG_FS) continue;
+      if(MC_BKG_FS != DataFS) continue;
       
-      dr_test = ComputeDR(Data,MC_BKG);
+      dr_test = ComputeDR2(DataFS,DataID,Data,MC_BKG_ID,MC_BKG);
       if(dr_test < min_dr_bkg){
 	min_dr_bkg = dr_test;
 	bkg_event_weight = MC_BKG_WEIGHT;
@@ -249,7 +359,7 @@ int FastME(){
       sig_event_weight = 1.;
       bkg_event_weight = 1.;
     }
-    psb_weight = psbW(sig_event_weight, bkg_event_weight, DataFS);
+    psb_weight = psbW(DataFS, sig_event_weight, bkg_event_weight);
     if(psb_weight<0 || psb_weight>1){
       cout<<"[Warning] PSB_Weight: "<<psb_weight<<"    SigW: "<<sig_event_weight<<"  BkgW: "<<bkg_event_weight<<endl;
     }
