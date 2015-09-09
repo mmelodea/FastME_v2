@@ -14,6 +14,7 @@ using namespace std;
 
 void format_LHEtoRoot(ifstream &Input, TString out_name){
   
+  string status;
 
   ///Checks if file given is ok
   int ncheck = 0;
@@ -36,10 +37,9 @@ void format_LHEtoRoot(ifstream &Input, TString out_name){
   TH1D *ZZ = new TH1D("ZZ","ZZ Invariant Mass",195,50,2000);
   
   Int_t FS_TYPE;
-  Double_t Zon_mass, Zoff_mass, ZZ_mass, EVENT_WEIGHT, RECO_PARTICLE[4][3][2];
+  Double_t Zon_mass, Zoff_mass, ZZ_mass, RECO_PARTICLE[4][3][2];
   TTree *lheTree = new TTree("LHE_Tree","LHE Tree formated to FastME");
   lheTree->Branch("FS_TYPE",&FS_TYPE,"FS_TYPE/I");
-  lheTree->Branch("EVENT_WEIGHT",&EVENT_WEIGHT,"EVENT_WEIGHT/D");
   lheTree->Branch("RECO_PARTICLE",&RECO_PARTICLE,"RECO_PARTICLE[4][3][2]/D");
   lheTree->Branch("Zon_mass",&Zon_mass,"Zon_mass/D");
   lheTree->Branch("Zoff_mass",&Zoff_mass,"Zoff_mass/D");
@@ -53,7 +53,6 @@ void format_LHEtoRoot(ifstream &Input, TString out_name){
   }while(info != "</init>");
   
   int nevents = 0, n_ele, n_mu;
-  double event_weight;
   do{
       ///Counting event number
       nevents += 1;
@@ -61,31 +60,24 @@ void format_LHEtoRoot(ifstream &Input, TString out_name){
       ///Reseting tree variables
       n_ele = 0, n_mu = 0;
       FS_TYPE      = pedestal;
-      EVENT_WEIGHT = pedestal;
       Zon_mass     = pedestal;
       Zoff_mass    = pedestal;
       ZZ_mass      = pedestal;
       
       ///Checks event by event
       do{
+	  status = "";
 	  Input >> info;
 	  if(info == "") continue; ///Dumps empity spaces
-
-	  ///Searches for event weight
-	  if(info == "6"){
-	    Input >> info;
-	    if(info == "1"){
-	     Input >> event_weight;
-	     //cout<<"Event Weight: "<<event_weight<<endl;
-	    }
-	  }
-    
+	  
 	  ///Searches for electrons
 	  if(info == "11"){
+	    Input >> status;
+	    if(status != "1") continue; ///Checks if particle is outgoing final state
 	    //cout<<"PDG_ID: "<<info<<endl;
 	    n_ele += 1;
 	    Double_t px, py, pz, e;
-	    for(int i=0; i<5; i++) Input >> info; ///Dumps not requested informations
+	    for(int i=0; i<4; i++) Input >> info; ///Dumps not requested informations
      
 	    Input >> px;     
 	    Input >> py;
@@ -98,10 +90,12 @@ void format_LHEtoRoot(ifstream &Input, TString out_name){
     
 	  ///Searches for positrons
 	  if(info == "-11"){
+	    Input >> status;
+	    if(status != "1") continue; ///Checks if particle is outgoing final state
 	    //cout<<"PDG_ID: "<<info<<endl;
 	    n_ele += 1;
 	    Double_t px, py, pz, e;
-	    for(int i=0; i<5; i++) Input >> info; ///Dumps not requested informations
+	    for(int i=0; i<4; i++) Input >> info; ///Dumps not requested informations
      
 	    Input >> px;     
 	    Input >> py;
@@ -114,10 +108,12 @@ void format_LHEtoRoot(ifstream &Input, TString out_name){
 
 	  ///Searches for muons
 	  if(info == "13"){
+	    Input >> status;
+	    if(status != "1") continue; ///Checks if particle is outgoing final state
 	    //cout<<"PDG_ID: "<<info<<endl;
 	    n_mu += 1;
 	    Double_t px, py, pz, e;
-	    for(int i=0; i<5; i++) Input >> info; ///Dumps not requested informations
+	    for(int i=0; i<4; i++) Input >> info; ///Dumps not requested informations
      
 	    Input >> px;     
 	    Input >> py;
@@ -130,10 +126,12 @@ void format_LHEtoRoot(ifstream &Input, TString out_name){
 	
 	  ///Searches for anti-muons
 	  if(info == "-13"){
+	    Input >> status;
+	    if(status != "1") continue; ///Checks if particle is outgoing final state
 	    //cout<<"PDG_ID: "<<info<<endl;
 	    n_mu += 1;
 	    Double_t px, py, pz, e;
-	    for(int i=0; i<5; i++) Input >> info; ///Dumps not requested informations
+	    for(int i=0; i<4; i++) Input >> info; ///Dumps not requested informations
      
 	    Input >> px;     
 	    Input >> py;
@@ -154,8 +152,6 @@ void format_LHEtoRoot(ifstream &Input, TString out_name){
       throw exception();
     }
     
-    ///Store the event weight
-    EVENT_WEIGHT = event_weight;
     
     ///Builds the matrix for FastME analysis
     RECO_PARTICLE[0][0][0] = p1.Pt();	RECO_PARTICLE[0][0][1] = 1.;
@@ -182,7 +178,9 @@ void format_LHEtoRoot(ifstream &Input, TString out_name){
     ZZ_mass = (p1+p2+p3+p4).M();
     
     ///Stores all data in Tree
-    lheTree->Fill();
+    if(Zon_mass>40 && Zoff_mass<120)
+      if(Zon_mass>12 && Zoff_mass<120)
+	lheTree->Fill();
     
     if(Zon_mass>40 && Zoff_mass<120) Zon->Fill(Zon_mass);
     if(Zon_mass>12 && Zoff_mass<120) Zoff->Fill(Zoff_mass);

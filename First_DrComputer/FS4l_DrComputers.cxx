@@ -76,7 +76,10 @@ double FS4l_DrOrder(Double_t Data[4][3][2], Double_t MC[4][3][2]){
 	
 	sum_dpt2  += pow( (Data[start+1][0][0]-MC[start+1][0][0])/Data[start+1][0][1] ,2 );
 	sum_deta2 += pow( (Data[start+1][1][0]-MC[start+1][1][0])/Data[start+1][1][1] ,2 );
-	sum_dphi2 += pow( (Data[start+1][2][0]-MC[start+1][2][0])/Data[start+1][2][1] ,2 );
+	if(Data[start+1][2][0]-MC[start+1][2][0] > pi)
+	  sum_dphi2 += pow( (Data[start+1][2][0]-MC[start+1][2][0]-pi)/Data[start+1][2][1] ,2 );
+	else
+	  sum_dphi2 += pow( (Data[start+1][2][0]-MC[start+1][2][0])/Data[start+1][2][1] ,2 );
       }
       
       if(sum_dr2 < sum_dr1){
@@ -86,7 +89,10 @@ double FS4l_DrOrder(Double_t Data[4][3][2], Double_t MC[4][3][2]){
 	
 	sum_dpt2  += pow( (Data[start+1][0][0]-MC[start][0][0])/Data[start+1][0][1] ,2 );
 	sum_deta2 += pow( (Data[start+1][1][0]-MC[start][1][0])/Data[start+1][1][1] ,2 );
-	sum_dphi2 += pow( (Data[start+1][2][0]-MC[start][2][0])/Data[start+1][2][1] ,2 );
+	if(Data[start+1][2][0]-MC[start][2][0] > pi)
+	  sum_dphi2 += pow( (Data[start+1][2][0]-MC[start][2][0]-pi)/Data[start+1][2][1] ,2 );
+	else
+	  sum_dphi2 += pow( (Data[start+1][2][0]-MC[start][2][0])/Data[start+1][2][1] ,2 );
       }
       
       start += 2;

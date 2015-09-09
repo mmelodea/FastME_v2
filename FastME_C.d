@@ -1,7 +1,6 @@
 
 # DO NOT DELETE
 
-./FastME_C.so: FS4l_DrComputers.cxx FS4l_DrComputers.h
 ./FastME_C.so: /home/sabayon/ROOT/include/root/TString.h
 ./FastME_C.so: /home/sabayon/ROOT/include/root/Riosfwd.h
 ./FastME_C.so: /home/sabayon/ROOT/include/root/RConfig.h
