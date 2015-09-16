@@ -42,9 +42,9 @@
 #define qq2e2mu_XS	0.0132134
 
 ///Scale Factors to normalize Deltas
-#define scale_dPt	70.
+#define scale_dPt	100.
 #define scale_dEta	5.
-#define scale_dPhi	2*pi
+#define scale_dPhi	pi
 
 using namespace std;
 
@@ -67,9 +67,11 @@ Double_t ComputeDR_MinDist(Int_t FS, Int_t DataParticleID[4], Double_t Data[4][3
   
       dPt  = (Data[idt][0][0]-MC[imc][0][0])/(scale_dPt*Data[idt][0][1]);
       dEta = (Data[idt][1][0]-MC[imc][1][0])/(scale_dEta*Data[idt][1][1]);
-      dPhi = (Data[idt][2][0]-MC[imc][2][0])/(scale_dPhi*Data[idt][2][1]);
+      dPhi = (Data[idt][2][0]-MC[imc][2][0]);
       if(fabs(dPhi) > pi)
-	dPhi = (fabs(dPhi)-pi)/(scale_dPhi*Data[idt][2][1]);
+	dPhi = (2*pi-fabs(dPhi))/(scale_dPhi*Data[idt][2][1]);
+      else
+	dPhi = dPhi/(scale_dPhi*Data[idt][2][1]);
       
       sum_dPt2  += dPt*dPt;
       sum_dEta2 += dEta*dEta;
@@ -89,9 +91,11 @@ Double_t ComputeDR_MinDist(Int_t FS, Int_t DataParticleID[4], Double_t Data[4][3
 
 	dPt  = (Data[idt][0][0]-MC[imc][0][0])/(scale_dPt*Data[idt][0][1]);
 	dEta = (Data[idt][1][0]-MC[imc][1][0])/(scale_dEta*Data[idt][1][1]);
-	dPhi = (Data[idt][2][0]-MC[imc][2][0])/(scale_dPhi*Data[idt][2][1]);
+	dPhi = (Data[idt][2][0]-MC[imc][2][0]);
 	if(fabs(dPhi) > pi)
-	  dPhi = (fabs(dPhi)-pi)/(scale_dPhi*Data[idt][2][1]);
+	  dPhi = (2*pi-fabs(dPhi))/(scale_dPhi*Data[idt][2][1]);
+	else
+	  dPhi = dPhi/(scale_dPhi*Data[idt][2][1]);
       
 	particles_distance = sqrt(dPt*dPt + dEta*dEta + dPhi*dPhi);
 	if(particles_distance < min_particles_distance && imc != vmin_imc[0] && imc != vmin_imc[1] && imc != vmin_imc[2]){
@@ -106,9 +110,11 @@ Double_t ComputeDR_MinDist(Int_t FS, Int_t DataParticleID[4], Double_t Data[4][3
       
       dPt  = (Data[idt][0][0]-MC[min_imc][0][0])/(scale_dPt*Data[idt][0][1]);
       dEta = (Data[idt][1][0]-MC[min_imc][1][0])/(scale_dEta*Data[idt][1][1]);
-      dPhi = (Data[idt][2][0]-MC[min_imc][2][0])/(scale_dPhi*Data[idt][2][1]);
+      dPhi = (Data[idt][2][0]-MC[min_imc][2][0]);
       if(fabs(dPhi) > pi)
-	dPhi = (fabs(dPhi)-pi)/(scale_dPhi*Data[idt][2][1]);
+	dPhi = (2*pi-fabs(dPhi))/(scale_dPhi*Data[idt][2][1]);
+      else
+	dPhi = dPhi/(scale_dPhi*Data[idt][2][1]);
       
       sum_dPt2  += dPt*dPt;
       sum_dEta2 += dEta*dEta;
@@ -147,19 +153,24 @@ Double_t ComputeDR_Media(Int_t FS, Int_t DataParticleID[4], Double_t Data[4][3][
     if(FS == 2){
       dPt  = (Data[idt][0][0]-MC[imc][0][0])/(scale_dPt*Data[idt][0][1]);
       dEta = (Data[idt][1][0]-MC[imc][1][0])/(scale_dEta*Data[idt][1][1]);
-      dPhi = (Data[idt][2][0]-MC[imc][2][0])/(scale_dPhi*Data[idt][2][1]);
+      dPhi = (Data[idt][2][0]-MC[imc][2][0]);
       if(fabs(dPhi) > pi)
-	dPhi = (fabs(dPhi)-pi)/(scale_dPhi*Data[idt][2][1]);
+	dPhi = (2*pi-fabs(dPhi))/(scale_dPhi*Data[idt][2][1]);
+      else
+	dPhi = dPhi/(scale_dPhi*Data[idt][2][1]);
     }
     
     ///Takes the media of combinations in 4e and 4mu final states
     else if(FS == 0 || FS == 1){
       dPt  = (Data[idt][0][0]-MC[imc][0][0])/(2*scale_dPt*Data[idt][0][1]);
       dEta = (Data[idt][1][0]-MC[imc][1][0])/(2*scale_dEta*Data[idt][1][1]);
-      dPhi = (Data[idt][2][0]-MC[imc][2][0])/(2*scale_dPhi*Data[idt][2][1]);
+      dPhi = (Data[idt][2][0]-MC[imc][2][0]);
       if(fabs(dPhi) > pi)
-	dPhi = (fabs(dPhi)-pi)/(2*scale_dPhi*Data[idt][2][1]);      
+	dPhi = (2*pi-fabs(dPhi))/(scale_dPhi*Data[idt][2][1]);
+      else
+	dPhi = dPhi/(scale_dPhi*Data[idt][2][1]);
     }
+
     else{
       cout<<"[Error] Final State irregular passed to ComputeDR function!"<<endl;
       throw exception();
@@ -199,8 +210,8 @@ Double_t psbW(Int_t FS, Double_t sig_event_weight, Double_t bkg_event_weight){
 int FastME(){
    
   ///--------------	Preparing Inputs	-----------------------------------------
-  TString Out_Name    = "ggZZ4l_plus_qqZZ4l_FME_MinDist_scale_dPt70";
-  TString Data_Path   = "NtuplesMadGraph/ggZZ4l_plus_qqZZ4l_MadGraph.root";
+  TString Out_Name    = "qqZZ4l_FME_MinDist_scale_dPt100";
+  TString Data_Path   = "NtuplesMadGraph/qqZZ4l_MadGraph.root";
   TString MC_Sig_Path = "NtuplesSherpa/ggZZ4l_weighted.root";
   TString MC_Bkg_Path = "NtuplesSherpa/qqZZ4l_weighted.root";
   TString Tree_Name   = "LHE_Tree";
