@@ -13,24 +13,31 @@
 
 using namespace std;
 
-void format_LHEtoRoot4l(ifstream &Input, TString out_name){
-      
+void format_LHEtoRoot4l(){
+  
+  //ifstream Input("/home/sabayon/MG5_aMC_v2_2_3/work_area/ZZ4l/ggZZ4l/Events/run_01/unweighted_events.lhe"); 
+  //TString out_name = "ggZZ4l_temp";
+
+  ifstream Input("/home/sabayon/MG5_aMC_v2_2_3/work_area/ZZ4l/qqZZ4l/Events/run_01/unweighted_events.lhe"); 
+  TString out_name = "qqZZ4l_temp";
+  
   string status;
   Double_t Total_XS;
 
-  TH1D *Zon = new TH1D("Zon","Z On-Shell",40,40,120);
-  TH1D *Zoff = new TH1D("Zoff","Z Off-Shell",54,12,120);
-  TH1D *ZZ = new TH1D("ZZ","ZZ Invariant Mass",195,50,2000);  
+  //TH1D *Zon = new TH1D("Zon","Z On-Shell",40,40,120);
+  //TH1D *Zoff = new TH1D("Zoff","Z Off-Shell",54,12,120);
+  //TH1D *ZZ = new TH1D("ZZ","ZZ Invariant Mass",195,50,2000);  
   
-  Int_t ParticleID[4], FinalState;
+  Int_t ParticleID[4], FinalState, EventType = 1;
   Double_t Zon_mass, Zoff_mass, ZZ_mass, EventWeight, RecoParticle[4][3][2];
   TTree *lheTree = new TTree("LHE_Tree","LHE Tree formated to FastME");
+  lheTree->Branch("EventType",&EventType,"EventType/I");
   lheTree->Branch("ParticleID",&ParticleID,"ParticleID[4]/I");
   lheTree->Branch("FinalState",&FinalState,"FinalState/I");
   lheTree->Branch("RecoParticle",&RecoParticle,"RecoParticle[4][3][2]/D");
-  lheTree->Branch("Zon_mass",&Zon_mass,"Zon_mass/D");
-  lheTree->Branch("Zoff_mass",&Zoff_mass,"Zoff_mass/D");
-  lheTree->Branch("ZZ_mass",&ZZ_mass,"ZZ_mass/D");
+  //lheTree->Branch("Zon_mass",&Zon_mass,"Zon_mass/D");
+  //lheTree->Branch("Zoff_mass",&Zoff_mass,"Zoff_mass/D");
+  //lheTree->Branch("ZZ_mass",&ZZ_mass,"ZZ_mass/D");
 
   std::vector<Int_t> partID;
   std::vector<TLorentzVector> part4p;
@@ -66,9 +73,9 @@ void format_LHEtoRoot4l(ifstream &Input, TString out_name){
       
       ///Reseting tree variables
       fv_tmp	  = reset4p;
-      Zon_mass    = pedestal;
-      Zoff_mass   = pedestal;
-      ZZ_mass     = pedestal;
+      //Zon_mass    = pedestal;
+      //Zoff_mass   = pedestal;
+      //ZZ_mass     = pedestal;
       
       ///Checks event by event
       n_ele = 0; n_mu = 0;
@@ -140,6 +147,7 @@ void format_LHEtoRoot4l(ifstream &Input, TString out_name){
     ///-------------------------------------------------------------
     
     ///Builds Z on and off-shell based on CMS method
+    /*
     TLorentzVector pair1, pair2;
     int fc=-1, sc=-1;
     for(int f=0; f<4; f++)
@@ -159,13 +167,14 @@ void format_LHEtoRoot4l(ifstream &Input, TString out_name){
     Zon_mass = (fabs(mpair1-Z_mass)<fabs(mpair2-Z_mass))? mpair1:mpair2;
     Zoff_mass = (Zon_mass == mpair1)? mpair2:mpair1; 
     ZZ_mass = (pair1 + pair2).M();
+    */
     
     ///Save tree
     lheTree->Fill();
     
-    if(Zon_mass>40 && Zon_mass<120) Zon->Fill(Zon_mass);
-    if(Zoff_mass>12 && Zoff_mass<120) Zoff->Fill(Zoff_mass);
-    if(ZZ_mass>50  &&  ZZ_mass<2000) ZZ->Fill(ZZ_mass);
+    //if(Zon_mass>40 && Zon_mass<120) Zon->Fill(Zon_mass);
+    //if(Zoff_mass>12 && Zoff_mass<120) Zoff->Fill(Zoff_mass);
+    //if(ZZ_mass>50  &&  ZZ_mass<2000) ZZ->Fill(ZZ_mass);
 
     ///Clear vectors
     partID.clear();
@@ -179,9 +188,9 @@ void format_LHEtoRoot4l(ifstream &Input, TString out_name){
   
   TFile *lheRoot = new TFile(out_name+".root","recreate");
   lheTree->Write();
-  Zon->Write();
-  Zoff->Write();
-  ZZ->Write();
+  //Zon->Write();
+  //Zoff->Write();
+  //ZZ->Write();
   lheRoot->Close();
 
 }

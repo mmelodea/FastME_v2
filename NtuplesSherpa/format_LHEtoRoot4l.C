@@ -15,29 +15,30 @@ using namespace std;
 
 void format_LHEtoRoot4l(){
   
-  //TString files[3] = {"ggZZ4e/ggZZ4e_weighted.lhe","ggZZ2e2mu/ggZZ2e2mu_weighted.lhe","ggZZ4mu/ggZZ4mu_weighted.lhe"};
+  //TString files[3] = {"ggZZ4e_weighted.lhe","ggZZ2e2mu_weighted.lhe","ggZZ4mu_weighted.lhe"};
   //TString out_name = "ggZZ4l_weighted";
   
-  TString files[3] = {"qqZZ4e/qqZZ4e_weighted.lhe","qqZZ2e2mu/qqZZ2e2mu_weighted.lhe","qqZZ4mu/qqZZ4mu_weighted.lhe"};
+  TString files[3] = {"qqZZ4e_weighted.lhe","qqZZ2e2mu_weighted.lhe","qqZZ4mu_weighted.lhe"};
   TString out_name = "qqZZ4l_weighted";
   
   string status;
-  Double_t Total_XS;
 
-  TH1D *Zon = new TH1D("Zon","Z On-Shell",40,40,120);
-  TH1D *Zoff = new TH1D("Zoff","Z Off-Shell",54,12,120);
-  TH1D *ZZ = new TH1D("ZZ","ZZ Invariant Mass",195,50,2000);  
+  //TH1D *Zon = new TH1D("Zon","Z On-Shell",40,40,120);
+  //TH1D *Zoff = new TH1D("Zoff","Z Off-Shell",54,12,120);
+  //TH1D *ZZ = new TH1D("ZZ","ZZ Invariant Mass",195,50,2000);  
   
-  Int_t ParticleID[4], FinalState;
+  Int_t ParticleID[4], FinalState, EventType = 1, Ntrials;
   Double_t Zon_mass, Zoff_mass, ZZ_mass, EventWeight, RecoParticle[4][3][2];
   TTree *lheTree = new TTree("LHE_Tree","LHE Tree formated to FastME");
   lheTree->Branch("EventWeight",&EventWeight,"EventWeight/D");
+  lheTree->Branch("Ntrials",&Ntrials,"Ntrials/I");
   lheTree->Branch("ParticleID",&ParticleID,"ParticleID[4]/I");
   lheTree->Branch("FinalState",&FinalState,"FinalState/I");
   lheTree->Branch("RecoParticle",&RecoParticle,"RecoParticle[4][3][2]/D");
-  lheTree->Branch("Zon_mass",&Zon_mass,"Zon_mass/D");
-  lheTree->Branch("Zoff_mass",&Zoff_mass,"Zoff_mass/D");
-  lheTree->Branch("ZZ_mass",&ZZ_mass,"ZZ_mass/D");
+  lheTree->Branch("EventType",&EventType,"EventType/I");
+  //lheTree->Branch("Zon_mass",&Zon_mass,"Zon_mass/D");
+  //lheTree->Branch("Zoff_mass",&Zoff_mass,"Zoff_mass/D");
+  //lheTree->Branch("ZZ_mass",&ZZ_mass,"ZZ_mass/D");
 
   std::vector<Int_t> partID;
   std::vector<TLorentzVector> part4p;
@@ -69,8 +70,8 @@ for(int fl=0; fl<3; fl++){
     //cout<<"Content: "<<info<<endl;
   }while(info != "</init>");
   
-  int nevents = 0, n_ele, n_mu, negative;
-  Double_t event_weight;
+  int nevents = 0, trials, ntrials=0, n_ele, n_mu, negative;
+  Double_t event_weight, Total_XS=0;
   do{
       ///Counting event number
       nevents += 1;
@@ -78,9 +79,9 @@ for(int fl=0; fl<3; fl++){
       ///Reseting tree variables
       fv_tmp	  = reset4p;
       EventWeight = pedestal;
-      Zon_mass    = pedestal;
-      Zoff_mass   = pedestal;
-      ZZ_mass     = pedestal;
+      //Zon_mass    = pedestal;
+      //Zoff_mass   = pedestal;
+      //ZZ_mass     = pedestal;
       
       ///Checks event by event
       n_ele = 0; n_mu = 0;
@@ -88,7 +89,14 @@ for(int fl=0; fl<3; fl++){
 	  status = "";
 	  Input >> info;
 	  if(info == "") continue; ///Dumps empity spaces
-
+	  //cout<<"Content: "<<info<<endl;
+    
+	  ///Searches for trials to weight event
+	  if(info == "trials="){
+	    Input >> trials;
+	    ntrials += trials;
+	    //cout<<"Content: "<<trials<<endl;
+	  }
 	  ///Searches for event weight
 	  if(info == "6"){
 	    Input >> info;
@@ -96,7 +104,7 @@ for(int fl=0; fl<3; fl++){
 	     Input >> event_weight;
 	     //cout<<"Event Weight: "<<event_weight<<endl;
 	     ///Computes the total Cross Section of process - have to fix.. the value not matches with given by Sherpa
-	     //Total_XS += event_weight;
+	     Total_XS += event_weight;
 	     //cout<<"Currently XS: "<<Total_XS<<endl;
 	    }
 	  }
@@ -104,12 +112,13 @@ for(int fl=0; fl<3; fl++){
 	  
 	  ///Searches for electrons/ positrons
 	  if(info == "11" || info == "-11"){
+   	    Input >> status;
+	    if(status != "1") continue; ///Checks if particle is outgoing final state
+
 	    n_ele += 1;
 	       if(info ==  "11") partID.push_back(11);
 	    else (info == "-11") partID.push_back(-11);
 	    
-	    Input >> status;
-	    if(status != "1") continue; ///Checks if particle is outgoing final state
 	    Double_t px, py, pz, e;
 	    for(int i=0; i<4; i++) Input >> info; ///Dumps not requested informations
      
@@ -124,12 +133,13 @@ for(int fl=0; fl<3; fl++){
     
 	  ///Searches for muons/ anti-muons
 	  if(info == "13" || info == "-13"){
+	    Input >> status;
+	    if(status != "1") continue; ///Checks if particle is outgoing final state
+
 	    n_mu += 1;
 	       if(info ==  "13") partID.push_back(13);
 	    else (info == "-13") partID.push_back(-13);
 
-	    Input >> status;
-	    if(status != "1") continue; ///Checks if particle is outgoing final state
 	    Double_t px, py, pz, e;
 	    for(int i=0; i<4; i++) Input >> info; ///Dumps not requested informations
      
@@ -143,7 +153,7 @@ for(int fl=0; fl<3; fl++){
 	  }
 
       }while(info != "</event>"); ///End of reading process of an event
-      if(event_weight < 0) negative += 1;
+      if(event_weight < 0) negative += 1;  
       
     ///Determine the final state
 	 if(n_ele == 4 && n_mu == 0) FinalState = 0;
@@ -156,6 +166,7 @@ for(int fl=0; fl<3; fl++){
           
     ///Store the event weight
     EventWeight = event_weight;
+    Ntrials	= trials;
     
     ///Builds the matrix for FastME analysis
     for(int i=0; i<4; i++){
@@ -182,18 +193,18 @@ for(int fl=0; fl<3; fl++){
       if((abs(ParticleID[f]) != abs(ParticleID[s])) || (ParticleID[f] == ParticleID[s]) || f==fc || s==sc) continue;
       pair2 = part4p[f] + part4p[s];
     }
-    Double_t mpair1 = pair1.M();
-    Double_t mpair2 = pair2.M();
-    Zon_mass = (fabs(mpair1-Z_mass)<fabs(mpair2-Z_mass))? mpair1:mpair2;
-    Zoff_mass = (Zon_mass == mpair1)? mpair2:mpair1; 
-    ZZ_mass = (pair1 + pair2).M();
+    //Double_t mpair1 = pair1.M();
+    //Double_t mpair2 = pair2.M();
+    //Zon_mass = (fabs(mpair1-Z_mass)<fabs(mpair2-Z_mass))? mpair1:mpair2;
+    //Zoff_mass = (Zon_mass == mpair1)? mpair2:mpair1; 
+    //ZZ_mass = (pair1 + pair2).M();
     
     ///Save tree
     lheTree->Fill();
     
-    if(Zon_mass>40 && Zon_mass<120) Zon->Fill(Zon_mass);
-    if(Zoff_mass>12 && Zoff_mass<120) Zoff->Fill(Zoff_mass);
-    if(ZZ_mass>50  &&  ZZ_mass<2000) ZZ->Fill(ZZ_mass);
+    //if(Zon_mass>40 && Zon_mass<120) Zon->Fill(Zon_mass);
+    //if(Zoff_mass>12 && Zoff_mass<120) Zoff->Fill(Zoff_mass);
+    //if(ZZ_mass>50  &&  ZZ_mass<2000) ZZ->Fill(ZZ_mass);
 
     ///Clear vectors
     partID.clear();
@@ -204,14 +215,14 @@ for(int fl=0; fl<3; fl++){
   }while(info != "</LesHouchesEvents>");
   cout<<"Events Generated: "<<nevents<<endl;
   cout<<"Fraction of Negative Weights: "<<(negative*100)/float(nevents)<<"%"<<endl;
-  //cout<<"Total XS:         "<<Total_XS<<" pb"<<endl;
+  cout<<"Total XS:         "<<Total_XS/double(ntrials)<<" pb"<<endl;
 }
   
   TFile *lheRoot = new TFile(out_name+".root","recreate");
   lheTree->Write();
-  Zon->Write();
-  Zoff->Write();
-  ZZ->Write();
+  //Zon->Write();
+  //Zoff->Write();
+  //ZZ->Write();
   lheRoot->Close();
 
 }
