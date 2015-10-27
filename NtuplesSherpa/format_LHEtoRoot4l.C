@@ -14,20 +14,31 @@
 using namespace std;
 
 void format_LHEtoRoot4l(){
+  TString out_name;
   
-  //TString files[3] = {"ggZZ4e_weighted.lhe","ggZZ2e2mu_weighted.lhe","ggZZ4mu_weighted.lhe"};
-  //TString out_name = "ggZZ4l_weighted";
-  
-  TString files[3] = {"qqZZ4e_weighted.lhe","qqZZ2e2mu_weighted.lhe","qqZZ4mu_weighted.lhe"};
-  TString out_name = "qqZZ4l_weighted";
-  
+  ///Signal
+  //ifstream Input("/home/sabayon/SHERPA_v2_2_0/work_area/FastME_OfficialNtuples/10e4Ev/gg4e/gg4e_14TeV_weighted.lhe");
+  //out_name = "gg4e_14TeV_weighted";
+  //ifstream Input("/home/sabayon/SHERPA_v2_2_0/work_area/FastME_OfficialNtuples/10e4Ev/gg4mu/gg4mu_14TeV_weighted.lhe");
+  //out_name = "gg4mu_14TeV_weighted";
+  //ifstream Input("/home/sabayon/SHERPA_v2_2_0/work_area/FastME_OfficialNtuples/10e4Ev/gg2e2mu/gg2e2mu_14TeV_weighted.lhe");
+  //out_name = "gg2e2mu_14TeV_weighted";
+
+  ///Background
+  //ifstream Input("/home/sabayon/SHERPA_v2_2_0/work_area/FastME_OfficialNtuples/10e4Ev/qq4e/qq4e_14TeV_weighted.lhe");
+  //out_name = "qq4e_14TeV_weighted";
+  //ifstream Input("/home/sabayon/SHERPA_v2_2_0/work_area/FastME_OfficialNtuples/10e4Ev/qq4mu/qq4mu_14TeV_weighted.lhe");
+  //out_name = "qq4mu_14TeV_weighted";
+  ifstream Input("/home/sabayon/SHERPA_v2_2_0/work_area/FastME_OfficialNtuples/10e4Ev/qq2e2mu/qq2e2mu_14TeV_weighted.lhe");
+  out_name = "qq2e2mu_14TeV_weighted";
+
   string status;
 
-  //TH1D *Zon = new TH1D("Zon","Z On-Shell",40,40,120);
-  //TH1D *Zoff = new TH1D("Zoff","Z Off-Shell",54,12,120);
-  //TH1D *ZZ = new TH1D("ZZ","ZZ Invariant Mass",195,50,2000);  
+  TH1D *Zon = new TH1D("Zon","Z On-Shell",40,40,120);
+  TH1D *Zoff = new TH1D("Zoff","Z Off-Shell",54,12,120);
+  TH1D *ZZ = new TH1D("ZZ","ZZ Invariant Mass",195,50,2000);  
   
-  Int_t ParticleID[4], FinalState, EventType = 1, Ntrials;
+  Int_t ParticleID[4], FinalState, EventType = 0, Ntrials;
   Double_t Zon_mass, Zoff_mass, ZZ_mass, EventWeight, RecoParticle[4][3][2];
   TTree *lheTree = new TTree("LHE_Tree","LHE Tree formated to FastME");
   lheTree->Branch("EventWeight",&EventWeight,"EventWeight/D");
@@ -35,7 +46,7 @@ void format_LHEtoRoot4l(){
   lheTree->Branch("ParticleID",&ParticleID,"ParticleID[4]/I");
   lheTree->Branch("FinalState",&FinalState,"FinalState/I");
   lheTree->Branch("RecoParticle",&RecoParticle,"RecoParticle[4][3][2]/D");
-  lheTree->Branch("EventType",&EventType,"EventType/I");
+  //lheTree->Branch("EventType",&EventType,"EventType/I");
   //lheTree->Branch("Zon_mass",&Zon_mass,"Zon_mass/D");
   //lheTree->Branch("Zoff_mass",&Zoff_mass,"Zoff_mass/D");
   //lheTree->Branch("ZZ_mass",&ZZ_mass,"ZZ_mass/D");
@@ -43,11 +54,6 @@ void format_LHEtoRoot4l(){
   std::vector<Int_t> partID;
   std::vector<TLorentzVector> part4p;
   TLorentzVector reset4p(-1,0,0,0), fv_tmp;
-
-
-for(int fl=0; fl<3; fl++){
-  
-  ifstream Input("/home/sabayon/SHERPA_v2_2_0/work_area/ZZ4l/"+files[fl]);  
   
   ///Checks if file given is ok
   int ncheck = 0;
@@ -79,9 +85,9 @@ for(int fl=0; fl<3; fl++){
       ///Reseting tree variables
       fv_tmp	  = reset4p;
       EventWeight = pedestal;
-      //Zon_mass    = pedestal;
-      //Zoff_mass   = pedestal;
-      //ZZ_mass     = pedestal;
+      Zon_mass    = pedestal;
+      Zoff_mass   = pedestal;
+      ZZ_mass     = pedestal;
       
       ///Checks event by event
       n_ele = 0; n_mu = 0;
@@ -190,21 +196,21 @@ for(int fl=0; fl<3; fl++){
     }
     for(int f=0; f<4; f++)
     for(int s=0; s<4; s++){
-      if((abs(ParticleID[f]) != abs(ParticleID[s])) || (ParticleID[f] == ParticleID[s]) || f==fc || s==sc) continue;
+      if((abs(ParticleID[f]) != abs(ParticleID[s])) || (ParticleID[f] == ParticleID[s]) || f==fc || f==sc || s==fc || s==sc) continue;
       pair2 = part4p[f] + part4p[s];
     }
-    //Double_t mpair1 = pair1.M();
-    //Double_t mpair2 = pair2.M();
-    //Zon_mass = (fabs(mpair1-Z_mass)<fabs(mpair2-Z_mass))? mpair1:mpair2;
-    //Zoff_mass = (Zon_mass == mpair1)? mpair2:mpair1; 
-    //ZZ_mass = (pair1 + pair2).M();
+    Double_t mpair1 = pair1.M();
+    Double_t mpair2 = pair2.M();
+    Zon_mass = (fabs(mpair1-Z_mass)<fabs(mpair2-Z_mass))? mpair1:mpair2;
+    Zoff_mass = (Zon_mass == mpair1)? mpair2:mpair1; 
+    ZZ_mass = (pair1 + pair2).M();
     
     ///Save tree
     lheTree->Fill();
     
-    //if(Zon_mass>40 && Zon_mass<120) Zon->Fill(Zon_mass);
-    //if(Zoff_mass>12 && Zoff_mass<120) Zoff->Fill(Zoff_mass);
-    //if(ZZ_mass>50  &&  ZZ_mass<2000) ZZ->Fill(ZZ_mass);
+    if(Zon_mass>40 && Zon_mass<120) Zon->Fill(Zon_mass);
+    if(Zoff_mass>12 && Zoff_mass<120) Zoff->Fill(Zoff_mass);
+    if(ZZ_mass>50  &&  ZZ_mass<2000) ZZ->Fill(ZZ_mass);
 
     ///Clear vectors
     partID.clear();
@@ -213,16 +219,17 @@ for(int fl=0; fl<3; fl++){
     Input >> info;
     //cout<<"nenvents: "<<nevents<<endl;
   }while(info != "</LesHouchesEvents>");
+   //while(nevents < 10000);
   cout<<"Events Generated: "<<nevents<<endl;
   cout<<"Fraction of Negative Weights: "<<(negative*100)/float(nevents)<<"%"<<endl;
   cout<<"Total XS:         "<<Total_XS/double(ntrials)<<" pb"<<endl;
-}
+
   
   TFile *lheRoot = new TFile(out_name+".root","recreate");
   lheTree->Write();
-  //Zon->Write();
-  //Zoff->Write();
-  //ZZ->Write();
+  Zon->Write();
+  Zoff->Write();
+  ZZ->Write();
   lheRoot->Close();
 
 }

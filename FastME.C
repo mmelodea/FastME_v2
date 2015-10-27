@@ -1,6 +1,6 @@
 ///:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 ///::::::::::::::::::::::::::::::::::		    FAST MATRIX ELEMENT			::::::::::::::::::::::::::::::::::
-///::::::::::::::::::::::::::::::::::          Author: Miquéias M. de Almeida		::::::::::::::::::::::::::::::::::
+///::::::::::::::::::::::::::::::::::	    Code Author: Miquéias M. de Almeida		::::::::::::::::::::::::::::::::::
 ///:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 ///::															::
 ///:: This tool takes Data, MC Signal and Background tridimensional matrix containing leptons pT, eta and phi, and      ::
@@ -28,37 +28,31 @@
 
 #define pi		3.14159265358979312
 #define pedestal 	-99					///Reset Value to Variables
-#define cut 	 	0.5					///Threshold to Separate Events (Ideal Cut 0.5 - MC #Sig and #Bkg Equals)
 
-///Current events doesn't contain photons!
-///Sig XS (pb)
-#define gg4e_XS		0.000245537
-#define gg4mu_XS	0.000245537
-#define gg2e2mu_XS	0.000430708
-
-///Bkg XS (pb)
-#define qq4e_XS		0.00666065
-#define qq4mu_XS	0.00666065
-#define qq2e2mu_XS	0.0132134
 
 ///Scale Factors to normalize Deltas
-#define scale_dPt	100.
+#define scale_dPt	50.
 #define scale_dEta	5.
 #define scale_dPhi	pi
+
+///Flag to control dPhi use on event distance
+#define use_dPhi	false
 
 using namespace std;
 
 
 ///========== Compute Distance Between Events - Minimum Distance Method ===============
 Double_t ComputeDR_MinDist(Int_t FS, Int_t DataParticleID[4], Double_t Data[4][3][2],
-		    Int_t McParticleID[4], Double_t MC[4][3][2]){
+			   Int_t McParticleID[4], Double_t MC[4][3][2]){
   
   Double_t particles_distance, min_particles_distance;
   Double_t dPt=0, dEta=0, dPhi=0;
   Double_t sum_dPt2=0, sum_dEta2=0, sum_dPhi2=0, event_distance=-1;
   
   //cout<<"\nFinal State: "<<FS<<endl;
+  ///2e2mu final state
   if(FS == 2){
+
     for(int idt=0; idt<4; idt++)
     for(int imc=0; imc<4; imc++){
       ///Avoid different Data-MC particles comparison
@@ -67,21 +61,23 @@ Double_t ComputeDR_MinDist(Int_t FS, Int_t DataParticleID[4], Double_t Data[4][3
   
       dPt  = (Data[idt][0][0]-MC[imc][0][0])/(scale_dPt*Data[idt][0][1]);
       dEta = (Data[idt][1][0]-MC[imc][1][0])/(scale_dEta*Data[idt][1][1]);
+      if(use_dPhi == true){
       dPhi = (Data[idt][2][0]-MC[imc][2][0]);
       if(fabs(dPhi) > pi)
 	dPhi = (2*pi-fabs(dPhi))/(scale_dPhi*Data[idt][2][1]);
       else
 	dPhi = dPhi/(scale_dPhi*Data[idt][2][1]);
-      
+      }
       sum_dPt2  += dPt*dPt;
       sum_dEta2 += dEta*dEta;
-      sum_dPhi2 += dPhi*dPhi;
+      if(use_dPhi == true) sum_dPhi2 += dPhi*dPhi;
     }
   }
     
   ///Takes the combination that gives minimum distance in 4e and 4mu final states
   else if(FS == 0 || FS == 1){
-    int min_imc, vmin_imc[4] = {-1, -1, -1, -1};
+    
+    int min_imc, vmin_imc[3] = {-1, -1, -1};
     for(int idt=0; idt<4; idt++){
       min_imc = -1, particles_distance = -1; min_particles_distance = 1.E15;
       for(int imc=0; imc<4; imc++){
@@ -91,34 +87,38 @@ Double_t ComputeDR_MinDist(Int_t FS, Int_t DataParticleID[4], Double_t Data[4][3
 
 	dPt  = (Data[idt][0][0]-MC[imc][0][0])/(scale_dPt*Data[idt][0][1]);
 	dEta = (Data[idt][1][0]-MC[imc][1][0])/(scale_dEta*Data[idt][1][1]);
+	if(use_dPhi == true){
 	dPhi = (Data[idt][2][0]-MC[imc][2][0]);
 	if(fabs(dPhi) > pi)
 	  dPhi = (2*pi-fabs(dPhi))/(scale_dPhi*Data[idt][2][1]);
 	else
 	  dPhi = dPhi/(scale_dPhi*Data[idt][2][1]);
-      
-	particles_distance = sqrt(dPt*dPt + dEta*dEta + dPhi*dPhi);
+	}
+	
+	particles_distance = sqrt(dPt*dPt + dEta*dEta);
+	if(use_dPhi == true) particles_distance = sqrt(dPt*dPt + dEta*dEta + dPhi*dPhi);
 	if(particles_distance < min_particles_distance && imc != vmin_imc[0] && imc != vmin_imc[1] && imc != vmin_imc[2]){
 	  min_imc = imc;
 	  min_particles_distance = particles_distance;
 	}
       }
       
-      ///Monitor of chosen MCs
+      ///Monitor of chosen MCs to avoid object recounting
       vmin_imc[idt] = min_imc;
       //cout<<"DataPos: "<<idt<<"  ID: "<<DataParticleID[idt]<<"  MCPos: "<<min_imc<<"   ID: "<<McParticleID[min_imc]<<endl;
       
       dPt  = (Data[idt][0][0]-MC[min_imc][0][0])/(scale_dPt*Data[idt][0][1]);
       dEta = (Data[idt][1][0]-MC[min_imc][1][0])/(scale_dEta*Data[idt][1][1]);
+      if(use_dPhi == true){
       dPhi = (Data[idt][2][0]-MC[min_imc][2][0]);
       if(fabs(dPhi) > pi)
 	dPhi = (2*pi-fabs(dPhi))/(scale_dPhi*Data[idt][2][1]);
       else
 	dPhi = dPhi/(scale_dPhi*Data[idt][2][1]);
-      
+      }
       sum_dPt2  += dPt*dPt;
       sum_dEta2 += dEta*dEta;
-      sum_dPhi2 += dPhi*dPhi;
+      if(use_dPhi == true) sum_dPhi2 += dPhi*dPhi;
     }
   }
   
@@ -127,18 +127,20 @@ Double_t ComputeDR_MinDist(Int_t FS, Int_t DataParticleID[4], Double_t Data[4][3
     throw exception();
   }
 
-  event_distance = sqrt(sum_dPt2 + sum_dEta2 + sum_dPhi2);
+  if(use_dPhi == false) event_distance = sqrt(sum_dPt2 + sum_dEta2);
+  else event_distance = sqrt(sum_dPt2 + sum_dEta2 + sum_dPhi2);
   
   if(event_distance == -1) throw exception();
   else return event_distance;
 }
+///================================================================================================
 ///================================================================================================
 
 
 
 ///========== Compute Distance Between Data-MC Events - Media Method ++============================
 Double_t ComputeDR_Media(Int_t FS, Int_t DataParticleID[4], Double_t Data[4][3][2],
-		   Int_t McParticleID[4], Double_t MC[4][3][2]){
+			 Int_t McParticleID[4], Double_t MC[4][3][2]){
   
   Double_t dPt=0, dEta=0, dPhi=0;
   Double_t sum_dPt2=0, sum_dEta2=0, sum_dPhi2=0, event_distance=-1;
@@ -153,22 +155,26 @@ Double_t ComputeDR_Media(Int_t FS, Int_t DataParticleID[4], Double_t Data[4][3][
     if(FS == 2){
       dPt  = (Data[idt][0][0]-MC[imc][0][0])/(scale_dPt*Data[idt][0][1]);
       dEta = (Data[idt][1][0]-MC[imc][1][0])/(scale_dEta*Data[idt][1][1]);
-      dPhi = (Data[idt][2][0]-MC[imc][2][0]);
-      if(fabs(dPhi) > pi)
-	dPhi = (2*pi-fabs(dPhi))/(scale_dPhi*Data[idt][2][1]);
-      else
-	dPhi = dPhi/(scale_dPhi*Data[idt][2][1]);
+      if(use_dPhi == true){
+	dPhi = (Data[idt][2][0]-MC[imc][2][0]);
+	if(fabs(dPhi) > pi)
+	  dPhi = (2*pi-fabs(dPhi))/(scale_dPhi*Data[idt][2][1]);
+	else
+	  dPhi = dPhi/(scale_dPhi*Data[idt][2][1]);
+      }
     }
     
     ///Takes the media of combinations in 4e and 4mu final states
     else if(FS == 0 || FS == 1){
       dPt  = (Data[idt][0][0]-MC[imc][0][0])/(2*scale_dPt*Data[idt][0][1]);
       dEta = (Data[idt][1][0]-MC[imc][1][0])/(2*scale_dEta*Data[idt][1][1]);
-      dPhi = (Data[idt][2][0]-MC[imc][2][0]);
-      if(fabs(dPhi) > pi)
-	dPhi = (2*pi-fabs(dPhi))/(scale_dPhi*Data[idt][2][1]);
-      else
-	dPhi = dPhi/(scale_dPhi*Data[idt][2][1]);
+      if(use_dPhi == true){
+	dPhi = (Data[idt][2][0]-MC[imc][2][0]);
+	if(fabs(dPhi) > pi)
+	  dPhi = (2*pi-fabs(dPhi))/(2*scale_dPhi*Data[idt][2][1]);
+	else
+	  dPhi = dPhi/(2*scale_dPhi*Data[idt][2][1]);
+      }
     }
 
     else{
@@ -178,11 +184,13 @@ Double_t ComputeDR_Media(Int_t FS, Int_t DataParticleID[4], Double_t Data[4][3][
     
     sum_dPt2  += dPt*dPt;
     sum_dEta2 += dEta*dEta;
-    sum_dPhi2 += dPhi*dPhi;
+    if(use_dPhi == true)
+      sum_dPhi2 += dPhi*dPhi;
   }      
   
-  event_distance = sqrt(sum_dPt2 + sum_dEta2 + sum_dPhi2);
-  
+  if(use_dPhi == false) event_distance = sqrt(sum_dPt2 + sum_dEta2);
+  else event_distance = sqrt(sum_dPt2 + sum_dEta2 + sum_dPhi2);
+
   if(event_distance == -1) throw exception();
   else return event_distance;
 }
@@ -192,40 +200,47 @@ Double_t ComputeDR_Media(Int_t FS, Int_t DataParticleID[4], Double_t Data[4][3][
 
 ///========= Compute Discriminant Values ==========================================================
 ///Based on Distance
-Double_t Disc(Double_t min_dr_sig, Double_t min_dr_bkg){
-  Double_t DD = min_dr_sig/(min_dr_sig + min_dr_bkg);
+Double_t PsbD(Double_t min_dr_sig, Double_t min_dr_bkg){
+  Double_t DD = min_dr_bkg/(min_dr_sig + min_dr_bkg);
   return DD;
 }
 
 ///Based on Weight
-Double_t psbW(Int_t FS, Double_t sig_event_weight, Double_t bkg_event_weight){
+Double_t PsbW(Double_t sig_event_weight, Double_t sigXS, Double_t bkg_event_weight, Double_t bkgXS){
   ///Splits the discriminant calculus according to final state (the cross section are different)
-       if(FS == 0) return (sig_event_weight/gg4e_XS)/(sig_event_weight/gg4e_XS + bkg_event_weight/qq4e_XS);
-  else if(FS == 1) return (sig_event_weight/gg4mu_XS)/(sig_event_weight/gg4mu_XS + bkg_event_weight/qq4mu_XS);
-  else if(FS == 2) return (sig_event_weight/gg2e2mu_XS)/(sig_event_weight/gg2e2mu_XS + bkg_event_weight/qq2e2mu_XS);
-  else throw exception();
+  Double_t DW = (sig_event_weight/sigXS)/(sig_event_weight/sigXS + bkg_event_weight/bkgXS);
+  return DW;
 }
 ///================================================================================================
 
 int FastME(){
    
   ///--------------	Preparing Inputs	-----------------------------------------
-  TString Out_Name    = "qqZZ4l_FME_MinDist_scale_dPt100";
-  TString Data_Path   = "NtuplesMadGraph/qqZZ4l_MadGraph.root";
-  TString MC_Sig_Path = "NtuplesSherpa/ggZZ4l_weighted.root";
-  TString MC_Bkg_Path = "NtuplesSherpa/qqZZ4l_weighted.root";
+  //TString Out_Name    = "ggH4l_14TeV_powheg_FMEe3MC_Scale_dEta5_dPt50_Media";
+  //TString Data_Path   = "NtuplesPowhegPythia/ggH4l_14TeV_powheg-pythia8.root";
+  TString Out_Name    = "ZZ4l_14TeV_powheg_FMEe3MC_Scale_dEta5_dPt50_Media";
+  TString Data_Path   = "NtuplesPowhegPythia/ZZTo4l_14TeV_powheg.root";
+  
+  //TString Out_Name      = "ggH4l_14TeV_madgraph_FMEe4MC_Scale_dEta5_dPt50";
+  //TString Data_Path     = "NtuplesMadGraph/gg4l_madgraph.root";
+  //TString Out_Name      = "ZZ4l_14TeV_madgraph_FMEe4MC_Scale_dEta5_dPt50";
+  //TString Data_Path     = "NtuplesMadGraph/qq4l_madgraph.root";
+    
+  /// ZZ events including photons
+  TString MC_Sig_Path = "NtuplesSherpa/10e3Ev/gg4l_14TeV_weighted.root";
+  TString MC_Bkg_Path = "NtuplesSherpa/10e3Ev/qq4l_14TeV_weighted.root";
+  
   TString Tree_Name   = "LHE_Tree";
   TString ID_Branch   = "ParticleID";
   TString Objs_Branch = "RecoParticle";
   TString FS_Branch   = "FinalState";
   TString EW_Branch   = "EventWeight";
-  TString Ev_Type     = "EventType";
   TString Num_Trials  = "Ntrials";
   ///------------------------------------------------------------------------------------
   
   ///Flag to control the Data-MC comparisons to compute DR
   ///(0: minimum distance, 1: media of combinations)
-  int DrMethod = 0;
+  int DrMethod = 1;
   
   ///Flags to control final state usage
   ///(to use only one channel - combinations not implemented!)
@@ -243,9 +258,8 @@ int FastME(){
   TTree *MC_Bkg_Tree = (TTree*)fMC_Bkg->Get(Tree_Name);
   
   ///Creating the Data Tree
-  Int_t Data_EvType, DataFS, DataID[4]; 
+  Int_t DataFS, DataID[4]; 
   Double_t Data[4][3][2];
-  Data_Tree->SetBranchAddress(Ev_Type,&Data_EvType);
   Data_Tree->SetBranchAddress(Objs_Branch,&Data);
   Data_Tree->SetBranchAddress(FS_Branch,&DataFS);
   Data_Tree->SetBranchAddress(ID_Branch,&DataID);
@@ -275,9 +289,11 @@ int FastME(){
   cout<<"\n::::::::::::::::::::::::::::::::::::::::"<<endl;
   cout<<":::::: Starting FastME Processing ::::::"<<endl;
   cout<<"::::::::::::::::::::::::::::::::::::::::"<<endl;
-  cout<<":: DrComputation Method: ";
+  cout<<":: DrComputation Mode: ";
        if(DrMethod == 0) cout<<"Minimum Distance"<<endl;
   else if(DrMethod == 1) cout<<"Media"<<endl;
+  if(use_dPhi == false)
+    cout<<":: No Using dPhi!"<<endl;
   cout<<"::--------------------------------------"<<endl;
   cout<<":: #Data Events:   "<<ndata<<endl;
   cout<<":: #MC Sig Events: "<<nsig<<endl;
@@ -285,6 +301,7 @@ int FastME(){
   cout<<"::--------------------------------------"<<endl;
   
   ///Compute the final states yields in the ntuples
+  ///And the Cross Section to compute weights
   int d4e=0, d4u=0, d2e2u=0;
   for(int fs=0; fs<ndata; fs++){
     Data_Tree->GetEntry(fs);
@@ -293,57 +310,74 @@ int FastME(){
     if(DataFS==2) d2e2u  += 1;
   }
   int s4e=0, s4u=0, s2e2u=0;
+  Double_t sig_4eSum_weight=0, sig_4uSum_weight=0, sig_2e2uSum_weight=0;
   Double_t sig_4eSum_trials=0, sig_4uSum_trials=0, sig_2e2uSum_trials=0;
   for(int fs=0; fs<nsig; fs++){
     MC_Sig_Tree->GetEntry(fs);
     if(MC_SIG_FS==0){
       s4e    += 1;
+      sig_4eSum_weight += MC_SIG_WEIGHT;
       sig_4eSum_trials += MC_SIG_NTRIALS;
     }
     if(MC_SIG_FS==1){
       s4u    += 1;
+      sig_4uSum_weight += MC_SIG_WEIGHT;
       sig_4uSum_trials += MC_SIG_NTRIALS;
     }
     if(MC_SIG_FS==2){
       s2e2u  += 1;
+      sig_2e2uSum_weight += MC_SIG_WEIGHT;
       sig_2e2uSum_trials += MC_SIG_NTRIALS;
     }      
   }
   int b4e=0, b4u=0, b2e2u=0;
+  Double_t bkg_4eSum_weight=0, bkg_4uSum_weight=0, bkg_2e2uSum_weight=0;
   Double_t bkg_4eSum_trials=0, bkg_4uSum_trials=0, bkg_2e2uSum_trials=0;
   for(int fs=0; fs<nbkg; fs++){
     MC_Bkg_Tree->GetEntry(fs);
     if(MC_BKG_FS==0){
       b4e    += 1;
+      bkg_4eSum_weight += MC_BKG_WEIGHT;
       bkg_4eSum_trials += MC_BKG_NTRIALS;
     }
     if(MC_BKG_FS==1){
       b4u    += 1;
+      bkg_4uSum_weight += MC_BKG_WEIGHT;
       bkg_4uSum_trials += MC_BKG_NTRIALS;
     }
     if(MC_BKG_FS==2){
       b2e2u  += 1;
+      bkg_2e2uSum_weight += MC_BKG_WEIGHT;
       bkg_2e2uSum_trials += MC_BKG_NTRIALS;
     }      
   }
-  Double_t sig_sum_trials[3] = {sig_4eSum_trials, sig_4uSum_trials, sig_2e2uSum_trials};
-  Double_t bkg_sum_trials[3] = {bkg_4eSum_trials, bkg_4uSum_trials, bkg_2e2uSum_trials};
+  Double_t SigTrials[3] = { sig_4eSum_trials, sig_4uSum_trials, sig_2e2uSum_trials };
+  Double_t BkgTrials[3] = { bkg_4eSum_trials, bkg_4uSum_trials, bkg_2e2uSum_trials };
+  
+  ///Computing and storing XS
+  Double_t SigXS[3] = { sig_4eSum_weight/SigTrials[0], sig_4uSum_weight/SigTrials[1], sig_2e2uSum_weight/SigTrials[2] };
+  Double_t BkgXS[3] = { bkg_4eSum_weight/BkgTrials[0], bkg_4uSum_weight/BkgTrials[1], bkg_2e2uSum_weight/BkgTrials[2] };
+  ///Plot on PC Screen the XS
+  cout<<":: XS Computed from the Ntuples"<<endl;
+  cout<<":: Sig   "<<"4e: "<<SigXS[0]<<"\t4mu: "<<SigXS[1]<<"\t2e2mu: "<<SigXS[2]<<endl;
+  cout<<":: Bkg   "<<"4e: "<<BkgXS[0]<<"\t4mu: "<<BkgXS[1]<<"\t2e2mu: "<<BkgXS[2]<<endl;
+  cout<<"::--------------------------------------"<<endl;
   
   cout<<":: Final State Yields in the Ntuples"<<endl;
-  cout<<":: Data  "<<"4e: "<<d4e<<"  4mu: "<<d4u<<"  2e2mu: "<<d2e2u<<endl;
-  cout<<":: Sig   "<<"4e: "<<s4e<<"  4mu: "<<s4u<<"  2e2mu: "<<s2e2u<<endl;
-  cout<<":: Bkg   "<<"4e: "<<b4e<<"  4mu: "<<b4u<<"  2e2mu: "<<b2e2u<<endl;
+  cout<<":: Data  "<<"4e: "<<d4e<<"\t4mu: "<<d4u<<"\t2e2mu: "<<d2e2u<<endl;
+  cout<<":: Sig   "<<"4e: "<<s4e<<"\t4mu: "<<s4u<<"\t2e2mu: "<<s2e2u<<endl;
+  cout<<":: Bkg   "<<"4e: "<<b4e<<"\t4mu: "<<b4u<<"\t2e2mu: "<<b2e2u<<endl;
   cout<<"::______________________________________"<<endl;
   cout<<"::--------------------------------------"<<endl;
   
   
   ///Creating Tree to store Fast Matrix Element results
-  Int_t event_type;
+  Int_t FinalState;
   Double_t dr_test, minDR_toSig, minDR_toBkg, psb_distance, sig_event_weight;
   Double_t min_dr_sig, min_dr_bkg, bkg_event_weight, psb_weight;
   TTree *FME_out = new TTree("FastME_Results","Fast Matrix Element Results");
   FME_out->SetDirectory(0);
-  FME_out->Branch("EventType",&event_type);
+  FME_out->Branch("FinalState",&FinalState);
   FME_out->Branch("minDR_toSig",&minDR_toSig);
   FME_out->Branch("minDR_toBkg",&minDR_toBkg);
   FME_out->Branch("PSB_Distance",&psb_distance);
@@ -361,18 +395,20 @@ int FastME(){
   
   
   ///Starts the analysis
-  //ndata = 1;
+  if(ndata > 10050) ndata = 10050;
+  //ndata = 9202;
   for(int i=0; i<ndata; i++){
     time(&delaied);
-    if(i % (ndata/10) == 0 && i != 0) cout<<":: Remaining Data: "<<ndata-i<<" ||Delaied: "<<difftime(delaied,start)<<"s"<<endl;
+    if(i % (ndata/10) == 0 && i != 0) cout<<":: Remaining Data: "<<ndata-i<<"\t||Elapsed: "<<difftime(delaied,start)<<"s"<<endl;
     Data_Tree->GetEntry(i);
+    
     //cout<<"\n\nDataFS: "<<DataFS<<endl;
 	 if(fs4e   == true && DataFS != 0) continue;
     else if(fs4u   == true && DataFS != 1) continue;
     else if(fs2e2u == true && DataFS != 2) continue;
     
     ///Reseting Variables
-    event_type          = Data_EvType;
+    //event_type          = Data_EvType;
     minDR_toSig   	= pedestal;
     minDR_toBkg   	= pedestal;
     psb_distance  	= pedestal;
@@ -384,7 +420,7 @@ int FastME(){
         
     
     ///:::::::::::::  Tests MC Signal  ::::::::::::::::::::::::::::::::::::::::::::::::::
-    //nsig = mc_cut;
+    //nsig = 10000;
     for(int s=0; s<nsig; s++){
       MC_Sig_Tree->GetEntry(s);
 	   if(fs4e   == true && MC_SIG_FS != 0) continue;
@@ -407,7 +443,7 @@ int FastME(){
     
 
     ///::::::::::  Using MC Background  :::::::::::::::::::::::::::::::::::::::::::::::::
-    //nbkg = mc_cut;
+    //nbkg = 10000;
     for(int b=0; b<nbkg; b++){
       MC_Bkg_Tree->GetEntry(b);
 	   if(fs4e   == true && MC_BKG_FS != 0) continue;
@@ -433,8 +469,8 @@ int FastME(){
       min_dr_sig = 1.;
       min_dr_bkg = 1.;
     }
-    psb_distance = Disc(min_dr_sig, min_dr_bkg);
-    if(psb_distance<0 || psb_distance>1){
+    psb_distance = PsbD(min_dr_sig, min_dr_bkg);
+    if(psb_distance < 0 || psb_distance > 1){
       cout<<"[Warning] PSB_Distance: "<<psb_distance<<"    SigD: "<<min_dr_sig<<"  BkgD: "<<min_dr_bkg<<endl;
     }
     minDR_toSig  = min_dr_sig;
@@ -446,13 +482,10 @@ int FastME(){
       sig_event_weight = 1.;
       bkg_event_weight = 1.;
     }
-    psb_weight = psbW(DataFS, sig_event_weight/sig_sum_trials[DataFS], bkg_event_weight/bkg_sum_trials[DataFS]);
-    //psb_weight = Disc(sig_event_weight/sig_sum_trials[DataFS], bkg_event_weight/bkg_sum_trials[DataFS]);
-    if(psb_weight<0 || psb_weight>1){
-      cout<<"[Warning] PSB_Weight: "<<psb_weight<<"    SigW: "<<sig_event_weight<<"  BkgW: "<<bkg_event_weight<<endl;
-    }
+    psb_weight = PsbW(sig_event_weight/SigTrials[DataFS], SigXS[DataFS],
+		      bkg_event_weight/BkgTrials[DataFS], BkgXS[DataFS]);
     
-    
+    FinalState = DataFS;
     ///Stores in the Tree the results
     FME_out->Fill();
   }

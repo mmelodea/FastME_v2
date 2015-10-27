@@ -1,37 +1,12 @@
 {
   ///To plot discriminant distributions
-/*  
-  //Sig XS (pb)
-  //double sig_sx[] = {0.000245537, 0.000245537, 0.000430708};
-  //Bkg XS (pb)
-  //double bkg_sx[] = {0.00666065, 0.00666065, 0.0132134};
- 
-  //Int_t sig_fs, bkg_fs;
-  //TFile *fosig = TFile::Open("NtuplesMadGraph/ggZZ4l_MadGraph.root");
-  //TTree *tosig = (TTree*)fosig->Get("LHE_Tree");
-  //tosig->SetBranchAddress("FinalState",&sig_fs);
-
-  //TFile *fobkg = TFile::Open("NtuplesMadGraph/qqZZ4l_MadGraph.root");
-  //TTree *tobkg = (TTree*)fobkg->Get("LHE_Tree");
-  //tobkg->SetBranchAddress("FinalState",&bkg_fs);
-
-  TFile *fsig = TFile::Open("ggZZ4l_FME_MinDist_scale_dPt1.root");
-  TFile *fbkg = TFile::Open("qqZZ4l_FME_MinDist_scale_dPt1.root");  
-  //TFile *fsig = TFile::Open("Official_4lResults/ggZZ4l_FME_Media.root");
-  //TFile *fbkg = TFile::Open("Official_4lResults/qqZZ4l_FME_Media.root");  
+   
+  TFile *fsig = TFile::Open("ggH4l_14TeV_powheg_FMEe3MC_Scale_dEta5_dPt50_Media.root");
+  TFile *fbkg = TFile::Open("ZZ4l_14TeV_powheg_FMEe3MC_Scale_dEta5_dPt50_Media.root");
 
   TTree *tsig = (TTree*)fsig->Get("FastME_Results");
   TTree *tbkg = (TTree*)fbkg->Get("FastME_Results");
   
-  Double_t psbDSig, psbWSig, psbDBkg, psbWBkg;
-  tsig->SetBranchAddress("PSB_Distance",&psbDSig);
-  tsig->SetBranchAddress("PSB_Weight",&psbWSig);
-  tbkg->SetBranchAddress("PSB_Distance",&psbDBkg);
-  tbkg->SetBranchAddress("PSB_Weight",&psbWBkg);
-  int nsig = tsig->GetEntries();
-  int nbkg = tbkg->GetEntries();
-  cout<<"nSig: "<<nsig<<"  nBkg: "<<nbkg<<endl;
-
   TH1D *sig_psbD = new TH1D("sig_psbD","",50,0,1);
   sig_psbD->SetLineWidth(2);
   TH1D *sig_psbW = new TH1D("sig_psbW","",50,0,1);
@@ -51,24 +26,10 @@
   tsig->Project("sig_psbW","PSB_Weight");
   tbkg->Project("bkg_psbD","PSB_Distance");
   tbkg->Project("bkg_psbW","PSB_Weight");
-
-  for(int i=0; i<nsig; i++){
-    tosig->GetEntry(i);
-    tsig->GetEntry(i);
-    sig_psbD->Fill(psbDSig,1);
-    sig_psbW->Fill(psbWSig,1);
-  }
-  for(int i=0; i<nbkg; i++){
-    tobkg->GetEntry(i);
-    tbkg->GetEntry(i);
-    bkg_psbD->Fill(psbDBkg,1);
-    bkg_psbW->Fill(psbWBkg,1);
-  }
-
     
   TLegend *leg = new TLegend(0.6,0.85,0.9,0.95);
-  leg->AddEntry(sig_psbD,"gg #rightarrow ZZ #rightarrow 4l","l");
-  leg->AddEntry(bkg_psbD,"qq #rightarrow ZZ #rightarrow 4l","l");
+  leg->AddEntry(sig_psbD,"ggH4l","l");
+  leg->AddEntry(bkg_psbD,"qq4l","l");
   leg->SetFillColor(0);
   leg->SetBorderSize(0);
   leg->SetTextSize(0.05);
@@ -84,18 +45,25 @@
   bkg_psbW->Draw();
   sig_psbW->Draw("same");
   leg->Draw();
-*/
+
  
 ///To plot Efficiency vs Purity
- 
-  TFile *fdata = TFile::Open("/home/sabayon/Developing/ggZZ4l_plus_qqZZ4l_FME_MinDist_scale_dPt70.root");  
-  Int_t EvType;
-  Double_t psbD_Data, psbW_Data;
-  TTree *tdata = (TTree*)fdata->Get("FastME_Results");
-  tdata->SetBranchAddress("PSB_Distance",&psbD_Data);
-  tdata->SetBranchAddress("PSB_Weight",&psbW_Data);
-  tdata->SetBranchAddress("EventType",&EvType);
-  int ndata = tdata->GetEntries();
+/*
+  Int_t SigFinalState, BkgFinalState;
+  Double_t psbD_Sig, psbW_Sig, psbD_Bkg, psbW_Bkg;
+  TFile *fme_sig = TFile::Open("ggH4l_14TeV_powheg_FMEe4MC_Scale_dEta5_dPt50.root");
+  //TFile *fme_sig = TFile::Open("ggH4l_14TeV_madgraph_FMEe4MC_Scale_dEta5_dPt50.root");
+  TTree *tsig = (TTree*)fme_sig->Get("FastME_Results");
+  tsig->SetBranchAddress("PSB_Distance",&psbD_Sig);
+  tsig->SetBranchAddress("PSB_Weight",&psbW_Sig);
+  int nsig = tsig->GetEntries();
+  
+  TFile *fme_bkg = TFile::Open("ZZ4l_14TeV_powheg_FMEe4MC_Scale_dEta5_dPt50.root");
+  //TFile *fme_bkg = TFile::Open("ZZ4l_14TeV_madgraph_FMEe4MC_Scale_dEta5_dPt50.root");
+  TTree *tbkg = (TTree*)fme_bkg->Get("FastME_Results");
+  tbkg->SetBranchAddress("PSB_Distance",&psbD_Bkg);
+  tbkg->SetBranchAddress("PSB_Weight",&psbW_Bkg);
+  int nbkg = tbkg->GetEntries();
   
   TH2D *eff_pur_D = new TH2D("eff_pur_D","",1000,0,1,1000,0,1);
   eff_pur_D->SetMarkerColor(kBlack);
@@ -104,37 +72,61 @@
 
   int npoints = 100, n1=0, n2=0;
   float purityD[npoints], efficiencyD[npoints], purityW[npoints], efficiencyW[npoints], x1[npoints], x2[npoints];
+  if(nsig != nbkg) cout<<"[Warning]: Different event number coming from two sources..."<<endl;
   for(int cut=0; cut<npoints; cut++){
     float vcut = cut/float(npoints);
-    int N_SigFME_D=0, N_SigTrue_D=0, N_SigFME_W=0, N_SigTrue_W=0;
-    for(int i=0; i<ndata; i++){
-      tdata->GetEntry(i);
+
+    float sig_acp_psbD = 0, sig_acp_psbW = 0;
+    float bkg_acp_psbD = 0, bkg_acp_psbW = 0;
+    for(int i=0; i<nsig; i++){
+      tsig->GetEntry(i);
+      tbkg->GetEntry(i);
       
-      if(psbD_Data<vcut) N_SigFME_D += 1;
-      if(psbW_Data>vcut) N_SigFME_W += 1;
-      ///EvType == 0 is Signal and EvType == 1 is Background
-      if(psbD_Data<vcut && EvType == 0) N_SigTrue_D +=1;
-      if(psbW_Data>vcut && EvType == 0) N_SigTrue_W +=1;
+      ///Less than cut is signal-like
+      ///(Efficiency)
+      if(psbD_Sig > vcut){
+	if(SigFinalState == 0) sig_acp_psbD += 5.05519E+01/3350.;
+	if(SigFinalState == 1) sig_acp_psbD += 5.05519E+01/3350.;
+	if(SigFinalState == 2) sig_acp_psbD += 5.05519E+01/3350.;
+      }
+      if(psbD_Bkg > vcut){
+	if(BkgFinalState == 0) bkg_acp_psbD += 1.88348E-02/3350.;
+	if(BkgFinalState == 1) bkg_acp_psbD += 1.88348E-02/3350.;
+	if(BkgFinalState == 2) bkg_acp_psbD += 4.27071E-02/3350.;
+      }
+      if(psbW_Sig > vcut){
+	if(SigFinalState == 0) sig_acp_psbW += 5.05519E+01/3350.;
+	if(SigFinalState == 1) sig_acp_psbW += 5.05519E+01/3350.;
+	if(SigFinalState == 2) sig_acp_psbW += 5.05519E+01/3350.;
+      }
+      if(psbW_Bkg > vcut){
+	if(BkgFinalState == 0) bkg_acp_psbW += 1.88348E-02/3350.;
+	if(BkgFinalState == 1) bkg_acp_psbW += 1.88348E-02/3350.;
+	if(BkgFinalState == 2) bkg_acp_psbW += 4.27071E-02/3350.;
+      }
     }
-    if(N_SigFME_D != 0){
+    
+    ///Purity
+    if(sig_acp_psbD != 0){
       x1[n1] = vcut;
-      efficiencyD[n1] = N_SigFME_D/float(ndata);
-      purityD[n1] = N_SigTrue_D/float(N_SigFME_D);
-      //Histogram with efficiency vs purity showing cuts
-      if(purityD[n1]>0.51 && efficiencyD[n1]>0.05) eff_pur_D->Fill(purityD[n1],efficiencyD[n1],vcut);
+      efficiencyD[n1] = (sig_acp_psbD + bkg_acp_psbD)/float(nsig + nbkg);
+      purityD[n1] = sig_acp_psbD/float(sig_acp_psbD + bkg_acp_psbD);
+      if(cut % 2 == 0 && vcut >= 0.34 && vcut <= 0.68)
+	eff_pur_D->Fill(purityD[n1],efficiencyD[n1],vcut);
       n1 += 1;
     }
-    if(cut%3==0 && N_SigFME_W != 0){
+    if(sig_acp_psbW != 0){
       x2[n2] = vcut;
-      efficiencyW[n2] = N_SigFME_W/float(ndata);
-      purityW[n2] = N_SigTrue_W/float(N_SigFME_W);
-      eff_pur_W->Fill(purityW[n2],efficiencyW[n2],vcut);
+      efficiencyW[n2] = (sig_acp_psbW + bkg_acp_psbW)/float(nsig + nbkg);
+      purityW[n2] = sig_acp_psbW/float(sig_acp_psbW + bkg_acp_psbW);
+      if(cut % 4 == 0)
+	eff_pur_W->Fill(purityW[n2],efficiencyW[n2],vcut);
       n2 += 1;
     }
   }
 
   ///Efficiency and Purity vs Discriminant Cut
-/*  
+
   TGraph *effD_cut = new TGraph(n1,x1,efficiencyD);
   effD_cut->SetMarkerColor(kBlack);
   effD_cut->SetMarkerStyle(20);
@@ -181,38 +173,35 @@
  */ 
 
  ///With cuts
- eff_pur_D->Draw("Text");
- eff_pur_W->Draw("Text,same");
+ //eff_pur_D->Draw("Text");
+ //eff_pur_W->Draw("Text,same");
  
  
  ///Plot Discriminant vs ZZ mass
-/*
- //Sig XS (pb)
- double sig_sx[] = {1,1,1};//0.000245537, 0.000245537, 0.000430708};
- //Bkg XS (pb)
- double bkg_sx[] = {1,1,1};//0.00666065, 0.00666065, 0.0132134};
- 
+/* 
  Int_t sig_fs, bkg_fs;
  Double_t sig_ZZ_mass, sig_PsbD, sig_PsbW, bkg_ZZ_mass, bkg_PsbD, bkg_PsbW;
- TFile *fsig = TFile::Open("NtuplesMadGraph/ggZZ4l_MadGraph.root");
+ //TFile *fsig = TFile::Open("NtuplesPowhegPythia/ggH4l_14TeV_powheg-pythia8.root");
+ TFile *fsig = TFile::Open("NtuplesMadGraph/gg4l_madgraph.root");
  TTree *tsig = (TTree*)fsig->Get("LHE_Tree");
  tsig->SetBranchAddress("ZZ_mass",&sig_ZZ_mass);
- tsig->SetBranchAddress("FinalState",&sig_fs);
  int nsig = tsig->GetEntries();
 
- TFile *sig_fme = TFile::Open("dPtScaleTests/ggZZ4l_FME_MinDist_scale_dPt70.root");
+ //TFile *sig_fme = TFile::Open("ggH4l_14TeV_powheg_FMEe4MC_Scale_dEta5_dPt50.root");
+ TFile *sig_fme = TFile::Open("ggH4l_14TeV_madgraph_FMEe4MC_Scale_dEta5_dPt50.root");
  TTree *tsig_fme = (TTree*)sig_fme->Get("FastME_Results");
  tsig_fme->SetBranchAddress("PSB_Distance",&sig_PsbD);
  tsig_fme->SetBranchAddress("PSB_Weight",&sig_PsbW);
 
  
- TFile *fbkg = TFile::Open("NtuplesMadGraph/qqZZ4l_MadGraph.root");
+ //TFile *fbkg = TFile::Open("NtuplesPowhegPythia/ZZTo4l_14TeV_powheg.root");
+ TFile *fbkg = TFile::Open("NtuplesMadGraph/qq4l_madgraph.root");
  TTree *tbkg = (TTree*)fbkg->Get("LHE_Tree");
  tbkg->SetBranchAddress("ZZ_mass",&bkg_ZZ_mass);
- tbkg->SetBranchAddress("FinalState",&bkg_fs);
  int nbkg = tbkg->GetEntries();
 
- TFile *bkg_fme = TFile::Open("dPtScaleTests/qqZZ4l_FME_MinDist_scale_dPt70.root");
+ //TFile *bkg_fme = TFile::Open("ZZ4l_14TeV_powheg_FMEe4MC_Scale_dEta5_dPt50.root");
+ TFile *bkg_fme = TFile::Open("ZZ4l_14TeV_madgraph_FMEe4MC_Scale_dEta5_dPt50.root");
  TTree *tbkg_fme = (TTree*)bkg_fme->Get("FastME_Results");
  tbkg_fme->SetBranchAddress("PSB_Distance",&bkg_PsbD);
  tbkg_fme->SetBranchAddress("PSB_Weight",&bkg_PsbW);
@@ -246,14 +235,14 @@
   for(int i=0; i<nsig; i++){
     tsig->GetEntry(i);
     tsig_fme->GetEntry(i);
-    sig_psbD_ZZmass->Fill(sig_ZZ_mass,sig_PsbD,sig_sx[sig_fs]);
-    sig_psbW_ZZmass->Fill(sig_ZZ_mass,sig_PsbW,sig_sx[sig_fs]);
+    sig_psbD_ZZmass->Fill(sig_ZZ_mass,sig_PsbD);
+    sig_psbW_ZZmass->Fill(sig_ZZ_mass,sig_PsbW);
   }
   for(int i=0; i<nbkg; i++){
     tbkg->GetEntry(i);
     tbkg_fme->GetEntry(i);
-    bkg_psbD_ZZmass->Fill(bkg_ZZ_mass,bkg_PsbD,bkg_sx[bkg_fs]);
-    bkg_psbW_ZZmass->Fill(bkg_ZZ_mass,bkg_PsbW,bkg_sx[bkg_fs]);    
+    bkg_psbD_ZZmass->Fill(bkg_ZZ_mass,bkg_PsbD);
+    bkg_psbW_ZZmass->Fill(bkg_ZZ_mass,bkg_PsbW);    
   }
   
   gStyle->SetOptStat(0);

@@ -15,11 +15,11 @@ using namespace std;
 
 void format_MadGraphLHEtoRoot4l(){
   
-  ifstream Input("/home/miqueias/MG5_aMC_v2_2_3/work_area/ZZ4l/ggZZ4l_unweighted.lhe"); 
-  TString out_name = "ggZZ4l_MadGraph";
+  ifstream Input("");
+  TString out_name = "";
 
-  //ifstream Input("/home/miqueias/MG5_aMC_v2_2_3/work_area/ZZ4l/qqZZ4l_unweighted.lhe"); 
-  //TString out_name = "qqZZ4l_MadGraph";
+  //ifstream Input("/home/sabayon/MG5_aMC_v2_2_3/work_area/qq2e2mu/Events/run_02/unweighted_events.lhe");
+  //TString out_name = "qq2e2mu_MadGraph";
   
   string status;
   Double_t Total_XS;
@@ -31,13 +31,13 @@ void format_MadGraphLHEtoRoot4l(){
   Int_t ParticleID[4], FinalState, EventType = 0;
   Double_t Zon_mass, Zoff_mass, ZZ_mass, EventWeight, RecoParticle[4][3][2];
   TTree *lheTree = new TTree("LHE_Tree","LHE Tree formated to FastME");
-  lheTree->Branch("EventType",&EventType,"EventType/I");
+  //lheTree->Branch("EventType",&EventType,"EventType/I");
   lheTree->Branch("ParticleID",&ParticleID,"ParticleID[4]/I");
   lheTree->Branch("FinalState",&FinalState,"FinalState/I");
   lheTree->Branch("RecoParticle",&RecoParticle,"RecoParticle[4][3][2]/D");
-  lheTree->Branch("Zon_mass",&Zon_mass,"Zon_mass/D");
-  lheTree->Branch("Zoff_mass",&Zoff_mass,"Zoff_mass/D");
-  lheTree->Branch("ZZ_mass",&ZZ_mass,"ZZ_mass/D");
+  //lheTree->Branch("Zon_mass",&Zon_mass,"Zon_mass/D");
+  //lheTree->Branch("Zoff_mass",&Zoff_mass,"Zoff_mass/D");
+  //lheTree->Branch("ZZ_mass",&ZZ_mass,"ZZ_mass/D");
 
   std::vector<Int_t> partID;
   std::vector<TLorentzVector> part4p;
